@@ -184,7 +184,6 @@ class KMeans:
             else:
                 # Add point to label bin
                 labels[index].append(point)
-           
         return labels
         
         
@@ -258,8 +257,7 @@ class KMeans:
             ax.scatter(R,G,B, s=10)
             #ax.scatter(cenR, cenG, cenB ,marker='*', s=(72*2), zorder=5)
         plt.pause(0.05)
-        #plt.show()
-    
+        #plt.show()    
     
 
 class Image:
@@ -643,7 +641,7 @@ class Image:
         transformed_img : np.ndarray
 
         '''
-        # 
+        # Source: https://docs.opencv.org/4.6.0/da/d6e/tutorial_py_geometric_transformations.html
         if not display and not get_data:
             return
         
@@ -705,6 +703,12 @@ class Image:
         gray_transformed = cv.cvtColor(ex_transform, cv.COLOR_BGR2GRAY)
         
         # Begin SIFT
+        """
+        Sources: 
+            https://docs.opencv.org/4.6.0/da/df5/tutorial_py_sift_intro.html
+            https://docs.opencv.org/4.6.0/dc/dc3/tutorial_py_matcher.html
+        """
+   
         sift = cv.SIFT.create()
         kp1_1, des1_1 = sift.detectAndCompute(gray, None)
         kp1_2, des1_2 = sift.detectAndCompute(gray_transformed, None)
@@ -794,6 +798,7 @@ class Image:
         gray_transformed = cv.cvtColor(ex_transform, cv.COLOR_BGR2GRAY)
         
         # Apply ORB
+        # Source: https://docs.opencv.org/3.4/dc/dc3/tutorial_py_matcher.html
         orb = cv.ORB_create()
 
         kp2_1, des2_1 = orb.detectAndCompute(gray, None)
