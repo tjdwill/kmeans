@@ -266,12 +266,6 @@ class Image:
     '''
         A class to make typical OpenCV operations simpler for myself.
     '''
-# =============================================================================
-#         TO-DO:
-#           1.) Implement Transformations
-#           2.) Add Keypoint Features (SIFT, ORB)
-# =============================================================================
-    
     
     #=================
     # Class Variables
