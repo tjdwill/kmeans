@@ -5,5 +5,5 @@ A repository documenting the implementation of a helper class for basic image op
 Example: k-Means implementation
 
 
-https://github.com/tjdwill/imgClass/assets/118497355/5b0e1895-873d-4ed9-84d9-df9f7b055c54
+https://github.com/tjdwill/imgClass/assets/118497355/3bca0147-d360-44b0-8e83-8a6060fe4dce
 
