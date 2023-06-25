@@ -7,49 +7,53 @@ Created on Tue Jun 13 19:38:22 2023
 """
 
 from collections.abc import Iterable
-#from typing import ClassVar
 import copy
 import os
 
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.colors as mcolors
 
 
 class KMeans:    
     '''
-        Description:
+        A class for implementing k-Means clustering. 
+        Clusters data and has the ability to perform image segmentation.
     '''
 
     #=================
     # Class Variables
     #=================
-    '''Global class variables go here'''
+    _THRESH_MAX:int = 1
+    
     
     #=================
     # Instance Variables
     #=================
-    '''Data that varies by specific instance goes here'''
     data:list
     segments:int
     threshold:float
     maxIterations:int 
+    
+    
     #=================
     # Initialization
     #=================
-    '''Self-Explanatory: Set up the class'''
     def __init__(self, data, segments=2, threshold=0.5, maxIterations=100):
-        # Look into data checks later
-        # TO_DO:
-            # Find a way to check if the segement count surpasses the
-            # total number of data points.
         self._data = data
         self._segments = segments
         self._threshold = threshold
         self._maxIterations = maxIterations
-        # Plotting
-        self._figure = plt.figure();
-        self._axis = self._figure.add_subplot(projection='3d');
+        
+        self._validateParams()
+        
+        # Plotting (2D and 3D cases)
+        self._figure2D = plt.figure();
+        self._axes2D = self._figure2D.add_subplot();
+        self._figure3D = plt.figure();
+        self._axes3D = self._figure3D.add_subplot(projection='3d');        
+        #plt.ion()
         
         
     #============
@@ -60,22 +64,23 @@ class KMeans:
     def data(self):
         '''Returns a copy of the object's data'''
         return copy.deepcopy(self._data)
+        
     @property
     def segments(self):
         '''How many segments into which the data is clustered.'''
         return self._segments
-
     @segments.setter
     def segments(self, value:int):
-        seg_val = value
+        if not isinstance(value, int):
+            raise TypeError("Value must be an integer.")
+        old_val = self._segments
         try:
-            if value < 1:
-                raise ValueError("Number of segments must be greater than 0.")
-        except (TypeError, AttributeError):
-            print("Number of segments must be an integer value.")
+            self._segments = value
+            self._validateParams()
+        except ValueError:
+            self._segments = old_val
             raise
-        else:
-            self._segments = int(seg_val)
+
             
     @property
     def threshold(self):
@@ -83,11 +88,11 @@ class KMeans:
         return self._threshold
     @threshold.setter
     def threshold(self, value:float):
-        lowerLim, upperLim = 0, 1
-        if value >= lowerLim and  value <= upperLim:
+        if value >= 0 and  value <= KMeans._THRESH_MAX:
             self._threshold = value
         else:
-            raise ValueError(f'Threshold must be between [{lowerLim}, {upperLim}]')
+            raise ValueError(f'Threshold must be between 0'\
+                             f' and {KMeans._THRESH_MAX}')
     
     #===============
     # Class Methods
@@ -95,57 +100,82 @@ class KMeans:
     
     # ::Public methods::
     def cluster(self, display:bool=True):
+        '''
+        The main event; performs the data clustering operation.
+
+        Parameters
+        ----------
+        display : bool, optional
+            Whether to live-plot the data or not. The default is True.
+
+        Returns
+        -------
+        list
+            [Clusters, Centroids, IterationCount]
+
+        '''
         # Initialize Variables
         data = self.data
-        k_num = self.segments
+        K_NUM = self.segments
         THRESH = self.threshold
         
         # Check (preclude inf. loop)
-        if len(data) < k_num:
+        # If the length of the data is less than the target segment number, 
+        # getting the initial means will result in an infinite loop. 
+        # The program would never be able to get 
+        # the target number of unique points.
+        if len(data) < K_NUM:
             raise ValueError("Number of segments exceeds data points."\
                              " Ensure data is in a 1-D iterable.\n"\
                             "Length Data: {}, Segments: {}".format(len(data), 
-                                                                   k_num)
+                                                                   K_NUM)
                             )
-        #print(f'Data: {data}\nSegments:{k_num}')
+        #print(f'Data: {data}\nSegments:{K_NUM}')
         
         # get k random points to serve as initial means
         print("Setting initial means...")
         means_found = False
         
+        # Loop until the mean points are found. Generally, it shouldn't loop at 
+        # all since repeat points are unlikely, but with randomization, there's
+        # always a chance, so I placed the check for uniqueness.
         while not means_found:
-            means = [data[np.random.randint(0, len(data))]
-                     for i in range(k_num)]
+            means = np.array([data[np.random.randint(0, len(data))]
+                     for i in range(K_NUM)])
             # Sanity Check
             length = len(means)
-            assert length == k_num
+            assert length == K_NUM
             # Ensure no duplicate point
-            check = set(means)
+            #check = set(means)
+            check = np.unique(means, axis=1)
             if len(check) == length:
                 means_found = True
             
-        # Get label bins
+        # Begin loop; Currently, the program will loop until each calculated
+        # cluster centroid is within THRESH distance from the mean found in the
+        # previous iteration, or until the iteration limit is reached,
+        # whichever happens first.
+        # I may change this calculation to use data variance in the future 
+        # if that's more "official."
         thresh_reached = False
         iterations = 0
         print("Iteration Count:")
         while not thresh_reached:
-            # Assign labels
+            # Assign clusters
             iterations += 1
-            print(iterations)
-
             if iterations >= self._maxIterations:
                 print("Max iterations reached. Returning output.")
                 thresh_reached= True
-                
-            labels = self._assignLabels(means, data)
-            
-            # Find centroid of each bin.
-            centroids = self._findCentroid(labels)
+            print(iterations)
+ 
+            clusters = self._assignLabels(means, data)
+            centroids = self._findCentroid(clusters)
             
             # Live plot the data
             if display:
-                self._display([labels, centroids, iterations])
-            # Compare centroid to previous mean.
+                self._display([clusters, centroids, iterations])
+                
+            # Compare centroids to previous means.
             for i in range(len(centroids)):
                 distance = self._calcDistance(centroids[i], means[i])
                 if distance > THRESH:
@@ -156,39 +186,125 @@ class KMeans:
                 thresh_reached = True
         if iterations < self._maxIterations:
             print("Successful cluster operation. Returning.")
-        return [labels, centroids, iterations]
-    ''' Should I have a calculate means function???'''    
+        return [clusters, centroids, iterations]    
     
+    
+    @staticmethod
+    def segment_img(image:np.ndarray, clusters:dict, centroids:list,
+                    random_colors:bool = False)->np.ndarray:
+        '''
+        Perform image segmentation from k-Means clustering
+
+        Parameters
+        ----------
+        image : np.ndarray
+        clusters : dict
+        centroids : list
+        random_colors : bool, optional
+            Whether to use the centroids as colors, or generate random ones.
+            The default is False.
+        Returns
+        -------
+        seg_img : np.ndarray
+            The segmented image.
+
+        '''
+        # Setup: Copy the image and get the colors
+        print(f'Beginning Image Segmentation: {len(clusters)} segments.')
+        seg_img = np.copy(image)
+        if random_colors:
+            colors = [(np.random.randint(0,256),
+                      np.random.randint(0,256),
+                      np.random.randint(0,256)) for i in range(len(clusters))]
+        else:
+            # Use centroid color
+            colors = np.round(centroids, 0)
+            
+        # Inspiration (and much gratitude):
+        # https://stackoverflow.com/questions/16094563/numpy-get-index-where-value-is-true
+        # Use Numpy nonzero function to find the indices of all elements that
+        # match a given pixel in a cluster. 
+        # Use those indices to replace the pixel values
+        # therein with the segmentation color.
+        
+        seg_img = seg_img.reshape(-1,3)
+        for cluster in clusters:
+            # Remember that the keys in the dictionary range from 0 to k-1, so they also
+            # double as indices.
+            print(f'Cluster {cluster}')
+            seg_color =  colors[cluster]
+            for pixel in clusters[cluster]:
+                # Get indices where image is equal to pixel
+                #print(f'Pixel: {type(pixel)}')
+                indices = np.nonzero(np.all(np.equal(pixel, seg_img), axis=1))
+                #print(indices[0])
+                seg_img[indices[0]] = seg_color
+        else:
+            # Please include the 'else' statement to prevent a tremendous 
+            # debugging headache. Watch the indentation.
+            seg_img = seg_img.reshape(image.shape)
+        return seg_img
     
     
     # ::Private methods::
+    def _validateParams(self):
+        # access and validate the data
+        data = self._data
+        K_NUM = self._segments
+        THRESH = self._threshold
+        MAX_ITERATIONS = self._maxIterations
+        
+        if np.array(data).ndim != 2:
+            raise ValueError("Data *must* be within a one-dimensional container."\
+                             '\nEx. [(0, 0), (2,3)]')
+        if K_NUM < 1:
+            raise ValueError("Number of segments must be at least one.")
+        elif K_NUM > len(data):
+            raise ValueError("Number of segments cannot exceed number of"\
+                             " data points.")
+        if THRESH < 0 or THRESH > KMeans._THRESH_MAX:
+            raise ValueError("Cannot have a negative threshold value.")
+        if MAX_ITERATIONS <= 0:
+            raise ValueError("Must have at least one iteration.")
+        
+        return True
+    
+    
     def _assignLabels(self, means:list, data:list):
-        # Get relevant data
-        k_num = self._segments
-        labels = {k:[] for k in range(k_num)}
-        
-        # Check if data will work with distance calculator function
-        '''if not isinstance(data[0], Iterable):
-            data = [[item] for item in data]
-            means = [[mean] for mean in means]'''
-        
+        '''
+        Separate the data into clusters.
+
+        Parameters
+        ----------
+        means : list
+            The current list of cluster means. 
+            Randomly chosen for first iteration.
+        data : list
+            The data to be organized.
+
+        Returns
+        -------
+        clusters : dictionary
+
+        '''
+        # Organizes the data into clusters based on which mean 
+        # is closest to a given point.
+        K_NUM = self._segments
+        clusters = {k:[] for k in range(K_NUM)}
+
         for point in data:
-            old_dist = 1E1000 # Ridiculously high number to initialize comparisons.
-            #print('\n', point, sep='\n')
+            # Initialize ridiculously high number to begin comparisons.
+            old_dist = 1E1000 
             for i in range(len(means)):
                 new_dist = self._calcDistance(point, means[i])
-                #print(i, new_dist)
-                if old_dist > new_dist:
+                if new_dist < old_dist:
                     # Track index of closest mean point
                     (old_dist, index) = (new_dist, i)
             else:
                 # Add point to label bin
-                labels[index].append(point)
-        return labels
-        
-        
-    def _dataValidate(self):
-        ...
+                clusters[index].append(point)
+                
+        return clusters
         
         
     def _calcDistance(self, point1:Iterable, point2:Iterable=None):
@@ -212,59 +328,112 @@ class KMeans:
             raise
             
         # Perform Calculation  
-        sqr_dist = [(point1[coord] - point2[coord])**2 
-                    for coord in range(len(point1))]
-        sqr_dist = sum(sqr_dist)
+        sqr_dist = (point1-point2)**2
+        sqr_dist = sqr_dist.sum()
         dist = np.sqrt(sqr_dist)
-        #print(f'Point 1: {point1}')
-        #print(f'Point 2: {point2}')
-        #print(f'Calculated Distance: {np.sqrt(sqr_dist)}')
+        
         return dist
         
     
-    def _findCentroid(self, points:Iterable):
-        ...
-        # Assume data is a list of tuple points (x,y,z), (R,G,B), etc.
-        dim = len(points)
+    def _findCentroid(self, clusters:Iterable):
+        '''
+        Calculate the centroid for each cluster in the bin.
+        Parameters
+        ----------
+        clusters : Iterable (dictionary)
+            The clustered data.
+
+        Returns
+        -------
+        centroids : list
+            List of the centroids of each cluster
+
+        '''
+        # Calculate the centroid for each cluster in the bin.
+        # Takes in any iterable, but seeing as the data is labeled, it should be
+        # a dictionary whose keys range from 0 to some n. 
+        # However, I'm leaving it to work for more iterables in case I need to 
+        # change the design in the future.
+        
         centroids = []
-        for i in range(dim):
-            label_bin = np.array(points[i])
+        for i in range(len(clusters)):
+            label_bin = np.array(clusters[i], dtype=np.float64)
             rows = label_bin.shape[0]
             # Calc centroid
             centroid = label_bin.sum(axis=0)/rows
-            centroid = centroid.astype(np.float64)
             centroids.append(centroid)
         return centroids
         
     
     def _display(self, data:Iterable):
         ...
-        # Assume we are passed the clusters, centroids
-        clusters, _, iterations = data
-        # Get R, G, B points
-        # Plot the clusters
-        ax = self._axis
-        #fig = plt.figure();
-        #ax = fig.add_subplot(projection='3d');
-        # Refresh axis
-        ax.clear()
-        # Plot setup
-        ax.set(xlabel='R', ylabel='G', zlabel='B',
-               title='k-Means Iteration {}'.format(iterations))
-        for i in range(len(clusters)):
-            R, G, B = zip(*clusters[i])
-            #cenR, cenG, cenB = (centroids[i].round())
-            ax.scatter(R,G,B, s=10)
-            #ax.scatter(cenR, cenG, cenB ,marker='*', s=(72*2), zorder=5)
-        plt.pause(0.05)
-        #plt.show()    
+        # Assume we are passed the clusters, centroids, and iterations count
+        # TO-DO: Figure out how to get the centroid to show in a 3D cluster.
+        
+        # Color list
+        # Matplotlib Colors: 
+        # https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_color_data.py
+        ''' 
+        The WRAP_FACTOR causes the colors to be reused after exhaustion
+        For example, if len(colors) == 10, but K_NUM == 11, 
+        The 11th cluster will use the first value in colors because 
+        10 % 10 == 0 (Remember 0-based indexing).
+        '''
+        
+        
+        colors = [color for color in list(mcolors.TABLEAU_COLORS.values())]
+        WRAP_FACTOR = len(colors)
+        
+        # Get data
+        clusters, centroids, iterations = data
+        #print(clusters[0][0])
+        dimensions = len(clusters[0][0])
+        #print(f'Data Dimensions: {dimensions}')
+        
+        # 2D case
+        if dimensions == 2:
+            ax = self._axes2D
+            ax.clear()
+            ax.set(xlabel='x', ylabel='y',
+                   title='k-Means Iteration {}\nk = {}'.format(iterations,
+                                                               self._segments))
+            for i in range(len(clusters)):
+                x, y = zip(*clusters[i])
+                cenX, cenY = centroids[i]
+                ax.scatter(x, y, s=10, color=colors[i % WRAP_FACTOR])
+                ax.scatter(cenX, cenY, color=colors[i % WRAP_FACTOR],
+                           marker='*', s=300, zorder=3, edgecolor='k')
+            plt.pause(0.05)
+            
+        # 3D case
+        elif dimensions == 3:
+            
+            ax = self._axes3D
+            ax.clear()
+            
+            # Plot setup
+            ax.set(xlabel='R', ylabel='G', zlabel='B',
+                   title='k-Means Iteration {}\nk = {}'.format(iterations,
+                                                               self._segments))
+            # Get R, G, B points and plot them for each cluster
+            # Matplotlib automatically switches color for each call to scatter.
+            for i in range(len(clusters)):
+                R, G, B = zip(*clusters[i])
+                #cenR, cenG, cenB = centroids[i]
+                ax.scatter(R,G,B, s=10, color=colors[i % WRAP_FACTOR])
+                #ax.scatter(cenR, cenG, cenB ,marker='*', s=(72*2), zorder=5)
+            plt.pause(0.05)
+        #plt.show()
+        else:
+            #print("Data is neither 2D nor 3D. Returning.")
+            return
     
 
 class Image:
     '''
         A class to make typical OpenCV operations simpler for myself.
     '''
-    
+
     #=================
     # Class Variables
     #=================
@@ -535,22 +704,26 @@ class Image:
 
         '''
         # Data containers
-        color_points = []
         
         # Fill data containers
         work_img = self.cvt_color('RGB', get_data=True, display=False)
+        color_points = work_img.reshape(-1, 3)
+        '''
+        color_points = []
         for row in work_img:
             for col in row:
                 r,g,b = col
                 color_points.append((r,g,b))
-        
+        '''
+    
         if not duplicate_pixels:
             # removes duplicates for uniform plotting.
-            unique_points = [*set(color_points)] 
-            print("Removing Duplicate Points.")
+            #print("Color Space: Removing duplicate points.")
+            unique_points = np.unique(color_points, axis=0) # For 2D array
+            # unique_points = [*set(color_points)] 
             return unique_points
         else:
-            print("Returning all points")
+            #print("Returning all points")
             return color_points
     
     
@@ -641,7 +814,7 @@ class Image:
         transformed_img : np.ndarray
 
         '''
-        # Source: https://docs.opencv.org/4.6.0/da/d6e/tutorial_py_geometric_transformations.html
+        # 
         if not display and not get_data:
             return
         
@@ -703,12 +876,6 @@ class Image:
         gray_transformed = cv.cvtColor(ex_transform, cv.COLOR_BGR2GRAY)
         
         # Begin SIFT
-        """
-        Sources: 
-            https://docs.opencv.org/4.6.0/da/df5/tutorial_py_sift_intro.html
-            https://docs.opencv.org/4.6.0/dc/dc3/tutorial_py_matcher.html
-        """
-   
         sift = cv.SIFT.create()
         kp1_1, des1_1 = sift.detectAndCompute(gray, None)
         kp1_2, des1_2 = sift.detectAndCompute(gray_transformed, None)
@@ -798,7 +965,6 @@ class Image:
         gray_transformed = cv.cvtColor(ex_transform, cv.COLOR_BGR2GRAY)
         
         # Apply ORB
-        # Source: https://docs.opencv.org/3.4/dc/dc3/tutorial_py_matcher.html
         orb = cv.ORB_create()
 
         kp2_1, des2_1 = orb.detectAndCompute(gray, None)
@@ -893,4 +1059,3 @@ class Image:
         # Cleanup
         cv.destroyAllWindows()
         print("Closed.")
-        
