@@ -402,7 +402,7 @@ class KMeans:
                 cenX, cenY = centroids[i]
                 ax.scatter(x, y, s=10, color=colors[i % WRAP_FACTOR])
                 ax.scatter(cenX, cenY, color=colors[i % WRAP_FACTOR],
-                           marker='*', s=300, zorder=3, edgecolor='k')
+                           marker='o', s=50, zorder=3, edgecolor='k')
             plt.pause(0.05)
             
         # 3D case
