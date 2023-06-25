@@ -736,11 +736,7 @@ class Image:
         else:   
             points = self.get_color_space(duplicate_pixels=True)
         
-        R, G, B = [], [], []
-        for point in points:
-            R.append(point[0])
-            G.append(point[1])
-            B.append(point[2])
+        R, G, B = zip(*points)
         # Data manipulation
         # Get Unique Data
         
