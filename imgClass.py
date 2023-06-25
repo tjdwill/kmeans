@@ -708,29 +708,18 @@ class Image:
         # Fill data containers
         work_img = self.cvt_color('RGB', get_data=True, display=False)
         color_points = work_img.reshape(-1, 3)
-        '''
-        color_points = []
-        for row in work_img:
-            for col in row:
-                r,g,b = col
-                color_points.append((r,g,b))
-        '''
     
         if not duplicate_pixels:
             # removes duplicates for uniform plotting.
-            #print("Color Space: Removing duplicate points.")
             unique_points = np.unique(color_points, axis=0) # For 2D array
-            # unique_points = [*set(color_points)] 
             return unique_points
         else:
-            #print("Returning all points")
             return color_points
     
     
     def view_color_space(self, uniform:bool=False):
         '''
-        BETA:
-            View sample of color space of the image.
+        View color space of the image.
 
         Parameters
         ----------
@@ -738,11 +727,6 @@ class Image:
             Whether to plot the feature space with equal weighting.
             Returns a sample of the feature space otherwise.
             The default is False.
-
-        Returns
-        -------
-        None.
-
         '''
         # Data containers
         if uniform:
@@ -876,6 +860,7 @@ class Image:
         gray_transformed = cv.cvtColor(ex_transform, cv.COLOR_BGR2GRAY)
         
         # Begin SIFT
+        # Source: https://docs.opencv.org/3.4/da/df5/tutorial_py_sift_intro.html
         sift = cv.SIFT.create()
         kp1_1, des1_1 = sift.detectAndCompute(gray, None)
         kp1_2, des1_2 = sift.detectAndCompute(gray_transformed, None)
@@ -965,6 +950,7 @@ class Image:
         gray_transformed = cv.cvtColor(ex_transform, cv.COLOR_BGR2GRAY)
         
         # Apply ORB
+        # Source: https://docs.opencv.org/3.4/dc/dc3/tutorial_py_matcher.html
         orb = cv.ORB_create()
 
         kp2_1, des2_1 = orb.detectAndCompute(gray, None)
