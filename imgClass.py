@@ -7,6 +7,7 @@ Created on Tue Jun 13 19:38:22 2023
 """
 
 from collections.abc import Iterable
+from typing import ClassVar
 import copy
 import os
 
@@ -25,7 +26,7 @@ class KMeans:
     #=================
     # Class Variables
     #=================
-    _THRESH_MAX:int = 1
+    _THRESH_MAX:ClassVar[int] = 1
     
     
     #=================
@@ -93,6 +94,11 @@ class KMeans:
         else:
             raise ValueError(f'Threshold must be between 0'\
                              f' and {KMeans._THRESH_MAX}')
+    
+# =============================================================================
+#     To-Do: Add a maxIterations property.
+# =============================================================================
+    
     
     #===============
     # Class Methods
@@ -438,10 +444,16 @@ class Image:
     # Class Variables
     #=================
     
+    # Incrementing this variable allows 
+    # the class to display multiple image windows.
+    _img_label:ClassVar[int] = 0
+    
+    
     #====================
     # Instance Variables
     #====================
     in_path: str
+    
     
     #=================
     # Initialization
@@ -532,11 +544,29 @@ class Image:
     
     # ::Public methods::
     
+    @staticmethod
+    def view_img(image:np.ndarray):
+        '''
+        Displays an image passed to the class.
+
+        Parameters
+        ----------
+        image : np.ndarray
+
+        '''
+        if image is not None and isinstance(image, np.ndarray):
+            cv.imshow("Image Class Display {}".format(Image._img_label), image) 
+            cv.waitKey(1)
+            Image._img_label += 1
+        else:
+            raise ValueError("No image passed.")
+    
+    
     def display(self):
         '''Displays the original image.'''
         self._display(self._img_backup)
     
-    
+        
     def save(self, image: np.ndarray,
              name:str = None)->bool:
         '''
@@ -745,14 +775,14 @@ class Image:
         ax = fig.add_subplot(projection='3d')
         
         height, width, _ = self._img_backup.shape
-        step = int(height*width/2000)
+        step = int(height * width / 2000)
         ticks = list(range(0,250,50))
         ticks.append(255)
 
         # Figure Axis settings
         ax.set(xlabel='R', ylabel='G', zlabel='B', 
                xlim = (0,255), ylim = (0,255), zlim = (0,255),
-               xticks = ticks, yticks =ticks, zticks = ticks)
+               xticks = ticks, yticks = ticks, zticks = ticks)
         
         # Plot the data
         name = os.path.splitext(self.name)[0]
@@ -831,7 +861,7 @@ class Image:
         Parameters
         ----------
         display : bool, optional
-            DESCRIPTION. The default is True.
+            Display output or not. The default is True.
         in_color : bool, optional
             Display in color or grayed. The default is True.
         get_data : bool, optional
