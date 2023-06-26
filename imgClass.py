@@ -95,11 +95,20 @@ class KMeans:
             raise ValueError(f'Threshold must be between 0'\
                              f' and {KMeans._THRESH_MAX}')
     
-# =============================================================================
-#     To-Do: Add a maxIterations property.
-# =============================================================================
-    
-    
+    @property
+    def maxIterations(self):
+        '''Max number of iterations for k-Means clustering'''
+        return self._maxIterations
+    @maxIterations.setter
+    def maxIterations(self, value:int):
+        if not isinstance(value, int):
+            raise TypeError("Value must be an integer.")
+        elif value < 1:
+            raise ValueError("Value must be at least 1.")
+        else:
+            self._maxIterations = value
+        
+
     #===============
     # Class Methods
     #===============
