@@ -173,14 +173,15 @@ class KMeans:
                 means = np.array([data[np.random.randint(0, len(data))]
                          for i in range(K_NUM)])
                 # Sanity Check
+                print(means)
                 length = len(means)
                 assert length == K_NUM
                 # Ensure no duplicate point
                 #check = set(means)
-                check = np.unique(means, axis=1)
+                check = np.unique(means, axis=0)
                 if len(check) == length:
                     means_found = True
-        print(f'Means Check:\n{means}')   
+        #print(f'Means Check:\n{means}')   
         # Begin loop; Currently, the program will loop until each calculated
         # cluster centroid is within THRESH distance from the mean found in the
         # previous iteration, or until the iteration limit is reached,
@@ -199,8 +200,9 @@ class KMeans:
             print(iterations)
  
             clusters = self._assignLabels(means, data)
+            #print(f'Clusters: {clusters}')
             centroids = self._findCentroid(clusters)
-            
+            #print(f'Centroids: {centroids}')
             # Live plot the data
             if display:
                 self._display([clusters, centroids, iterations])
@@ -287,7 +289,7 @@ class KMeans:
         accepted_types = [list, tuple, np.ndarray]
         
         if np.array(data).ndim != 2:
-            raise ValueError("Data *must* be within a one-dimensional container."\
+            raise ValueError("Data *must* be w/in a 1-D container."\
                              '\nEx. [(0, 0), (2,3)]')
         if K_NUM < 1:
             raise ValueError("Number of segments must be at least one.")
@@ -303,16 +305,30 @@ class KMeans:
             if type(initial_means) not in accepted_types:
                 raise TypeError("Means container must be one of the"\
                                 f" following:\n{accepted_types}")
-            # Check elements
+            # Check element types and values.
             if not all([type(arr) in accepted_types for arr in initial_means]):
                 raise TypeError("Elements must be one of the following types:"\
                                 f'\n{accepted_types}')
+            if not all(any(np.equal(data, element).all(1)) 
+                       for element in initial_means):
+                raise ValueError("Provided means must be among the data.")
+            # Remove duplicates and check remaining length
+            # Turns out np.unique changes the order of the data.
+            # https://stackoverflow.com/questions/15637336/numpy-unique-with-order-preserved
+            #print(f'Before: {initial_means}')
+            initial_means, ndx = np.unique(initial_means, axis=1, 
+                                           return_index=True)
+            #print(ndx)
+            initial_means = initial_means[:,ndx]
+            #print(f'After {initial_means}')
             # Check length
             try:
-                assert len(initial_means) == K_NUM
+                length = len(initial_means)
+                assert length == K_NUM
             except AssertionError:
                 print("\nNumber of mean points must == number of segments.\n")
                 raise
+            self._initial_means = initial_means
         print("KMeans: All parameters valid.")
         return True
     
@@ -344,6 +360,7 @@ class KMeans:
             old_dist = 1E1000 
             for i in range(len(means)):
                 new_dist = self._calcDistance(point, means[i])
+                
                 if new_dist < old_dist:
                     # Track index of closest mean point
                     (old_dist, index) = (new_dist, i)
