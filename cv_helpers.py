@@ -36,16 +36,18 @@ class KMeans:
     segments:int
     threshold:float
     maxIterations:int 
-    
+    initial_means:Iterable
     
     #=================
     # Initialization
     #=================
-    def __init__(self, data, segments=2, threshold=0.5, maxIterations=100):
+    def __init__(self, data, segments=2, threshold=0.5, maxIterations=100,
+                 initial_means=None):
         self._data = data
         self._segments = segments
         self._threshold = threshold
         self._maxIterations = maxIterations
+        self._initial_means = initial_means
         
         self._validateParams()
         
@@ -114,12 +116,17 @@ class KMeans:
     #===============
     
     # ::Public methods::
-    def cluster(self, display:bool=True):
+    def cluster(self,
+                display:bool=True):
         '''
         The main event; performs the data clustering operation.
 
         Parameters
         ----------
+        means: list, optional
+            List of means to serve as initial centroids.
+            Selects randomly from data if not provided.
+            
         display : bool, optional
             Whether to live-plot the data or not. The default is True.
 
@@ -147,25 +154,33 @@ class KMeans:
                             )
         #print(f'Data: {data}\nSegments:{K_NUM}')
         
-        # get k random points to serve as initial means
-        print("Setting initial means...")
-        means_found = False
+        #===================
+        # Set initial means
+        #===================
         
-        # Loop until the mean points are found. Generally, it shouldn't loop at 
-        # all since repeat points are unlikely, but with randomization, there's
-        # always a chance, so I placed the check for uniqueness.
-        while not means_found:
-            means = np.array([data[np.random.randint(0, len(data))]
-                     for i in range(K_NUM)])
-            # Sanity Check
-            length = len(means)
-            assert length == K_NUM
-            # Ensure no duplicate point
-            #check = set(means)
-            check = np.unique(means, axis=1)
-            if len(check) == length:
-                means_found = True
+        # Perform checks on user-passed means.
+        if self._initial_means is not None:            
+            means = self._initial_means
+        else:
+            # get k random points to serve as initial means
+            print("Generating initial means...")
+            means_found = False
             
+            # Loop until the mean points are found. It shouldn't loop at 
+            # all since repeat points are unlikely, but with randomization, 
+            # there's always a chance, so I placed the check for uniqueness.
+            while not means_found:
+                means = np.array([data[np.random.randint(0, len(data))]
+                         for i in range(K_NUM)])
+                # Sanity Check
+                length = len(means)
+                assert length == K_NUM
+                # Ensure no duplicate point
+                #check = set(means)
+                check = np.unique(means, axis=1)
+                if len(check) == length:
+                    means_found = True
+        print(f'Means Check:\n{means}')   
         # Begin loop; Currently, the program will loop until each calculated
         # cluster centroid is within THRESH distance from the mean found in the
         # previous iteration, or until the iteration limit is reached,
@@ -268,6 +283,8 @@ class KMeans:
         K_NUM = self._segments
         THRESH = self._threshold
         MAX_ITERATIONS = self._maxIterations
+        initial_means = self._initial_means
+        accepted_types = [list, tuple, np.ndarray]
         
         if np.array(data).ndim != 2:
             raise ValueError("Data *must* be within a one-dimensional container."\
@@ -281,7 +298,22 @@ class KMeans:
             raise ValueError("Cannot have a negative threshold value.")
         if MAX_ITERATIONS <= 0:
             raise ValueError("Must have at least one iteration.")
-        
+            
+        if initial_means is not None:
+            if type(initial_means) not in accepted_types:
+                raise TypeError("Means container must be one of the"\
+                                f" following:\n{accepted_types}")
+            # Check elements
+            if not all([type(arr) in accepted_types for arr in initial_means]):
+                raise TypeError("Elements must be one of the following types:"\
+                                f'\n{accepted_types}')
+            # Check length
+            try:
+                assert len(initial_means) == K_NUM
+            except AssertionError:
+                print("\nNumber of mean points must == number of segments.\n")
+                raise
+        print("KMeans: All parameters valid.")
         return True
     
     
