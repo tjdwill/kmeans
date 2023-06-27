@@ -229,7 +229,7 @@ class KMeans:
 
         Parameters
         ----------
-        image : np.ndarray
+        image : np.ndarray (RGB)
         clusters : dict
         centroids : list
         random_colors : bool, optional
@@ -238,7 +238,7 @@ class KMeans:
         Returns
         -------
         seg_img : np.ndarray
-            The segmented image.
+            The segmented image. (RGB)
 
         '''
         # Setup: Copy the image and get the colors
