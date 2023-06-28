@@ -18,31 +18,30 @@ import matplotlib.colors as mcolors
 
 
 class KMeans:    
-    '''
+    """
         A class for implementing k-Means clustering. 
         Clusters data and has the ability to perform image segmentation.
-    '''
+    """
 
-    #=================
+    # =================
     # Class Variables
-    #=================
-    _THRESH_MAX:ClassVar[int] = 1
-    
-    
-    #=================
+    # =================
+    _THRESH_MAX: ClassVar[int] = 1
+
+    # =================
     # Instance Variables
-    #=================
-    data:list
-    segments:int
-    threshold:float
-    maxIterations:int 
-    initial_means:Iterable
+    # =================
+    data: list
+    segments: int
+    threshold: float
+    maxIterations: int
+    initial_means: Iterable
     
-    #=================
+    # =================
     # Initialization
-    #=================
-    def __init__(self, data, segments=2, threshold=0.5, maxIterations=100,
-                 initial_means=None):
+    # =================
+    def __init__(self, data, segments=2, initial_means=None, threshold=0.5, 
+                 maxIterations=100):
         self._data = data
         self._segments = segments
         self._threshold = threshold
@@ -55,25 +54,25 @@ class KMeans:
         self._figure2D = plt.figure();
         self._axes2D = self._figure2D.add_subplot();
         self._figure3D = plt.figure();
-        self._axes3D = self._figure3D.add_subplot(projection='3d');        
-        #plt.ion()
-        
-        
-    #============
+        self._axes3D = self._figure3D.add_subplot(projection='3d');
+        # plt.ion()
+
+    # ============
     # Properties
-    #============
+    # ============
     '''Use these instead of explicit getters and setters'''
     @property
     def data(self):
-        '''Returns a copy of the object's data'''
+        """Returns a copy of the object's data"""
         return copy.deepcopy(self._data)
         
     @property
     def segments(self):
-        '''How many segments into which the data is clustered.'''
+        """How many segments into which the data is clustered."""
         return self._segments
+
     @segments.setter
-    def segments(self, value:int):
+    def segments(self, value: int):
         if not isinstance(value, int):
             raise TypeError("Value must be an integer.")
         old_val = self._segments
@@ -84,49 +83,44 @@ class KMeans:
             self._segments = old_val
             raise
 
-            
     @property
     def threshold(self):
-        '''Threshold for k-means clustering.'''
+        """Threshold for k-means clustering."""
         return self._threshold
+
     @threshold.setter
-    def threshold(self, value:float):
-        if value >= 0 and  value <= KMeans._THRESH_MAX:
+    def threshold(self, value: float):
+        if 0 <= value <= KMeans._THRESH_MAX:
             self._threshold = value
         else:
-            raise ValueError(f'Threshold must be between 0'\
-                             f' and {KMeans._THRESH_MAX}')
+            raise ValueError(f'Threshold must be between 0 and {KMeans._THRESH_MAX}')
     
     @property
     def maxIterations(self):
-        '''Max number of iterations for k-Means clustering'''
+        """Max number of iterations for k-Means clustering"""
         return self._maxIterations
+
     @maxIterations.setter
-    def maxIterations(self, value:int):
+    def maxIterations(self, value: int):
         if not isinstance(value, int):
             raise TypeError("Value must be an integer.")
         elif value < 1:
             raise ValueError("Value must be at least 1.")
         else:
             self._maxIterations = value
-        
 
-    #===============
+    # ===============
     # Class Methods
-    #===============
+    # ===============
     
     # ::Public methods::
     def cluster(self,
-                display:bool=True):
-        '''
+                display: bool = True) -> list:
+        """
         The main event; performs the data clustering operation.
 
         Parameters
         ----------
-        means: list, optional
-            List of means to serve as initial centroids.
-            Selects randomly from data if not provided.
-            
         display : bool, optional
             Whether to live-plot the data or not. The default is True.
 
@@ -135,7 +129,7 @@ class KMeans:
         list
             [Clusters, Centroids, IterationCount]
 
-        '''
+        """
         # Initialize Variables
         data = self.data
         K_NUM = self.segments
@@ -151,12 +145,16 @@ class KMeans:
                              " Ensure data is in a 1-D iterable.\n"\
                             "Length Data: {}, Segments: {}".format(len(data), 
                                                                    K_NUM)
-                            )
-        #print(f'Data: {data}\nSegments:{K_NUM}')
+                             )
+        # print(f'Data: {data}\nSegments:{K_NUM}')
         
-        #===================
+        # Declare variables
+        clusters, centroids = None, None
+        means = None
+        
+        # ===================
         # Set initial means
-        #===================
+        # ===================
         
         # Perform checks on user-passed means.
         if self._initial_means is not None:            
@@ -171,17 +169,16 @@ class KMeans:
             # there's always a chance, so I placed the check for uniqueness.
             while not means_found:
                 means = np.array([data[np.random.randint(0, len(data))]
-                         for i in range(K_NUM)])
+                         for _ in range(K_NUM)])
                 # Sanity Check
                 print(means)
                 length = len(means)
                 assert length == K_NUM
                 # Ensure no duplicate point
-                #check = set(means)
                 check = np.unique(means, axis=0)
                 if len(check) == length:
                     means_found = True
-        #print(f'Means Check:\n{means}')   
+        # print(f'Means Check:\n{means}')   
         # Begin loop; Currently, the program will loop until each calculated
         # cluster centroid is within THRESH distance from the mean found in the
         # previous iteration, or until the iteration limit is reached,
@@ -190,19 +187,19 @@ class KMeans:
         # if that's more "official."
         thresh_reached = False
         iterations = 0
-        print("Iteration Count:")
+        print("Cluster Iteration Count:")
         while not thresh_reached:
             # Assign clusters
             iterations += 1
             if iterations >= self._maxIterations:
                 print("Max iterations reached. Returning output.")
-                thresh_reached= True
+                thresh_reached = True
             print(iterations)
  
             clusters = self._assignLabels(means, data)
-            #print(f'Clusters: {clusters}')
+            # print(f'Clusters: {clusters}')
             centroids = self._findCentroid(clusters)
-            #print(f'Centroids: {centroids}')
+            # print(f'Centroids: {centroids}')
             # Live plot the data
             if display:
                 self._display([clusters, centroids, iterations])
@@ -217,14 +214,13 @@ class KMeans:
             else:
                 thresh_reached = True
         if iterations < self._maxIterations:
-            print("Successful cluster operation. Returning.")
+            print("Successful cluster operation.\n")
         return [clusters, centroids, iterations]    
     
-    
     @staticmethod
-    def segment_img(image:np.ndarray, clusters:dict, centroids:list,
-                    random_colors:bool = False)->np.ndarray:
-        '''
+    def segment_img(image: np.ndarray, clusters: dict, centroids: list,
+                    random_colors: bool = False) -> np.ndarray:
+        """
         Perform image segmentation from k-Means clustering
 
         Parameters
@@ -240,14 +236,14 @@ class KMeans:
         seg_img : np.ndarray
             The segmented image. (RGB)
 
-        '''
+        """
         # Setup: Copy the image and get the colors
         print(f'Beginning Image Segmentation: {len(clusters)} segments.')
         seg_img = np.copy(image)
         if random_colors:
-            colors = [(np.random.randint(0,256),
-                      np.random.randint(0,256),
-                      np.random.randint(0,256)) for i in range(len(clusters))]
+            colors = [(np.random.randint(0, 256),
+                      np.random.randint(0, 256),
+                      np.random.randint(0, 256)) for _ in range(len(clusters))]
         else:
             # Use centroid color
             colors = np.round(centroids, 0)
@@ -259,25 +255,24 @@ class KMeans:
         # Use those indices to replace the pixel values
         # therein with the segmentation color.
         
-        seg_img = seg_img.reshape(-1,3)
+        seg_img = seg_img.reshape(-1, 3)
         for cluster in clusters:
             # Remember that the keys in the dictionary range from 0 to k-1, so they also
             # double as indices.
             print(f'Cluster {cluster}')
-            seg_color =  colors[cluster]
+            seg_color = colors[cluster]
             for pixel in clusters[cluster]:
                 # Get indices where image is equal to pixel
-                #print(f'Pixel: {type(pixel)}')
+                # print(f'Pixel: {type(pixel)}')
                 indices = np.nonzero(np.all(np.equal(pixel, seg_img), axis=1))
-                #print(indices[0])
+                # print(indices[0])
                 seg_img[indices[0]] = seg_color
         else:
             # Please include the 'else' statement to prevent a tremendous 
             # debugging headache. Watch the indentation.
             seg_img = seg_img.reshape(image.shape)
         return seg_img
-    
-    
+
     # ::Private methods::
     def _validateParams(self):
         # access and validate the data
@@ -289,13 +284,11 @@ class KMeans:
         accepted_types = [list, tuple, np.ndarray]
         
         if np.array(data).ndim != 2:
-            raise ValueError("Data *must* be w/in a 1-D container."\
-                             '\nEx. [(0, 0), (2,3)]')
+            raise ValueError("Data *must* be w/in a 1-D container.\nEx. [(0, 0), (2,3)]")
         if K_NUM < 1:
             raise ValueError("Number of segments must be at least one.")
         elif K_NUM > len(data):
-            raise ValueError("Number of segments cannot exceed number of"\
-                             " data points.")
+            raise ValueError("Number of segments cannot exceed number of data points.")
         if THRESH < 0 or THRESH > KMeans._THRESH_MAX:
             raise ValueError("Cannot have a negative threshold value.")
         if MAX_ITERATIONS <= 0:
@@ -303,24 +296,22 @@ class KMeans:
             
         if initial_means is not None:
             if type(initial_means) not in accepted_types:
-                raise TypeError("Means container must be one of the"\
-                                f" following:\n{accepted_types}")
+                raise TypeError(f'Means container must be one of the following:\n{accepted_types}')
             # Check element types and values.
             if not all([type(arr) in accepted_types for arr in initial_means]):
-                raise TypeError("Elements must be one of the following types:"\
-                                f'\n{accepted_types}')
+                raise TypeError(f'Elements must be one of the following types:\n{accepted_types}')
             if not all(any(np.equal(data, element).all(1)) 
                        for element in initial_means):
                 raise ValueError("Provided means must be among the data.")
             # Remove duplicates and check remaining length
             # Turns out np.unique changes the order of the data.
             # https://stackoverflow.com/questions/15637336/numpy-unique-with-order-preserved
-            #print(f'Before: {initial_means}')
+            # print(f'Before: {initial_means}')
             initial_means, ndx = np.unique(initial_means, axis=1, 
                                            return_index=True)
-            #print(ndx)
-            initial_means = initial_means[:,ndx]
-            #print(f'After {initial_means}')
+            # print(ndx)
+            initial_means = initial_means[:, ndx]
+            # print(f'After {initial_means}')
             # Check length
             try:
                 length = len(initial_means)
@@ -331,10 +322,9 @@ class KMeans:
             self._initial_means = initial_means
         print("KMeans: All parameters valid.")
         return True
-    
-    
-    def _assignLabels(self, means:list, data:list):
-        '''
+
+    def _assignLabels(self, means: list, data: list):
+        """
         Separate the data into clusters.
 
         Parameters
@@ -349,11 +339,12 @@ class KMeans:
         -------
         clusters : dictionary
 
-        '''
+        """
         # Organizes the data into clusters based on which mean 
         # is closest to a given point.
         K_NUM = self._segments
-        clusters = {k:[] for k in range(K_NUM)}
+        clusters = {k: [] for k in range(K_NUM)}
+        index = None
 
         for point in data:
             # Initialize ridiculously high number to begin comparisons.
@@ -362,7 +353,7 @@ class KMeans:
                 new_dist = self._calcDistance(point, means[i])
                 
                 if new_dist < old_dist:
-                    # Track index of closest mean point
+                    # Track index of the closest mean point
                     (old_dist, index) = (new_dist, i)
             else:
                 # Add point to label bin
@@ -370,8 +361,8 @@ class KMeans:
                 
         return clusters
         
-        
-    def _calcDistance(self, point1:Iterable, point2:Iterable=None):
+    @staticmethod
+    def _calcDistance(point1: Iterable, point2: Iterable = None):
         # check input
         if not isinstance(point1, Iterable):
             point1 = [point1]
@@ -398,9 +389,9 @@ class KMeans:
         
         return dist
         
-    
-    def _findCentroid(self, clusters:Iterable):
-        '''
+    @staticmethod
+    def _findCentroid(clusters: Iterable):
+        """
         Calculate the centroid for each cluster in the bin.
         Parameters
         ----------
@@ -412,7 +403,7 @@ class KMeans:
         centroids : list
             List of the centroids of each cluster
 
-        '''
+        """
         # Calculate the centroid for each cluster in the bin.
         # Takes in any iterable, but seeing as the data is labeled, it should be
         # a dictionary whose keys range from 0 to some n. 
@@ -427,9 +418,8 @@ class KMeans:
             centroid = label_bin.sum(axis=0)/rows
             centroids.append(centroid)
         return centroids
-        
-    
-    def _display(self, data:Iterable):
+
+    def _display(self, data: Iterable):
         ...
         # Assume we are passed the clusters, centroids, and iterations count
         # TO-DO: Figure out how to get the centroid to show in a 3D cluster.
@@ -437,22 +427,22 @@ class KMeans:
         # Color list
         # Matplotlib Colors: 
         # https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_color_data.py
-        ''' 
+        """ 
         The WRAP_FACTOR causes the colors to be reused after exhaustion
         For example, if len(colors) == 10, but K_NUM == 11, 
         The 11th cluster will use the first value in colors because 
         10 % 10 == 0 (Remember 0-based indexing).
-        '''
-        
+        """
         
         colors = [color for color in list(mcolors.TABLEAU_COLORS.values())]
         WRAP_FACTOR = len(colors)
         
         # Get data
         clusters, centroids, iterations = data
-        #print(clusters[0][0])
+        # print(clusters[0][0])
         dimensions = len(clusters[0][0])
-        #print(f'Data Dimensions: {dimensions}')
+        # print(f'Data Dimensions: {dimensions}')
+        labels = ['Cluster {}'.format(i) for i in range(len(clusters))]
         
         # 2D case
         if dimensions == 2:
@@ -464,9 +454,12 @@ class KMeans:
             for i in range(len(clusters)):
                 x, y = zip(*clusters[i])
                 cenX, cenY = centroids[i]
-                ax.scatter(x, y, s=10, color=colors[i % WRAP_FACTOR])
+                ax.scatter(x, y, s=10, color=colors[i % WRAP_FACTOR],
+                           label=labels[i])
                 ax.scatter(cenX, cenY, color=colors[i % WRAP_FACTOR],
                            marker='o', s=50, zorder=3, edgecolor='k')
+            ax.legend()
+            # ax.grid(visible=True, axis='both')
             plt.pause(0.05)
             
         # 3D case
@@ -483,39 +476,37 @@ class KMeans:
             # Matplotlib automatically switches color for each call to scatter.
             for i in range(len(clusters)):
                 R, G, B = zip(*clusters[i])
-                #cenR, cenG, cenB = centroids[i]
-                ax.scatter(R,G,B, s=10, color=colors[i % WRAP_FACTOR])
-                #ax.scatter(cenR, cenG, cenB ,marker='*', s=(72*2), zorder=5)
+                # cenR, cenG, cenB = centroids[i]
+                ax.scatter(R, G, B, s=10, color=colors[i % WRAP_FACTOR])
+                # ax.scatter(cenR, cenG, cenB ,marker='*', s=(72*2), zorder=5)
             plt.pause(0.05)
-        #plt.show()
+        # plt.show()
         else:
-            #print("Data is neither 2D nor 3D. Returning.")
+            # print("Data is neither 2D nor 3D. Returning.")
             return
     
 
 class Image:
-    '''
+    """
         A class to make typical OpenCV operations simpler for myself.
-    '''
+    """
 
-    #=================
+    # =================
     # Class Variables
-    #=================
+    # =================
     
     # Incrementing this variable allows 
     # the class to display multiple image windows.
-    _img_label:ClassVar[int] = 0
-    
-    
-    #====================
+    _img_label: ClassVar[int] = 0
+
+    # ====================
     # Instance Variables
-    #====================
+    # ====================
     in_path: str
-    
-    
-    #=================
+
+    # =================
     # Initialization
-    #=================
+    # =================
     def __init__(self, in_path):
         
         self._img_path = self._format_path(in_path)
@@ -531,18 +522,16 @@ class Image:
         # Load image
         self._img_backup = cv.imread(self._img_path)
         assert self._img_backup is not None
-        
-        
-    #============
-    # Properties
-    #============
 
+    # ============
+    # Properties
+    # ============
     
     @property
     def output_dir(self):
-        '''
+        """
         The output directory of the image. Determines where operations are saved.
-        '''
+        """
         return self._output_dir
     @output_dir.setter
     def output_dir(self, path: str):
@@ -560,81 +549,77 @@ class Image:
                 new_path += '/'
             self._output_dir = new_path
             return
-      
-        
+
     @property
     def name(self):
-        '''
+        """
         Returns
         -------
         image_name: str
-        '''
+        """
         return self._name
 
-
     @property
-    def img_backup(self)-> np.ndarray: 
-        '''
+    def img_backup(self) -> np.ndarray:
+        """
         An untouched version of the passed image.
 
         Returns
         -------
         numpy.ndarray of image
 
-        '''
+        """
         return np.copy(self._img_backup)
 
     @property
-    def size(self)->tuple:
-        '''
+    def size(self) -> tuple:
+        """
         Returns
         -------
         tuple
            (height, width) in px.
 
-        '''
+        """
         height, width, _ = self._img_backup.shape
-        return (height, width)
+        return height, width
         
-    #===============
+    # ===============
     # Class Methods
-    #===============
+    # ===============
     
     # ::Public methods::
     
     @staticmethod
-    def view_img(image:np.ndarray):
-        '''
+    def view_img(image: np.ndarray):
+        """
         Displays an image passed to the class.
 
         Parameters
         ----------
         image : np.ndarray
 
-        '''
+        """
         if image is not None and isinstance(image, np.ndarray):
             cv.imshow("Image Class Display {}".format(Image._img_label), image) 
             cv.waitKey(1)
             Image._img_label += 1
         else:
             raise ValueError("No image passed.")
-    
-    
+
     def display(self):
-        '''Displays the original image.'''
+        """Displays the original image."""
         self._display(self._img_backup)
-    
-        
+
     def save(self, image: np.ndarray,
-             name:str = None)->bool:
-        '''
+             name: str = None) -> bool:
+        """
         Description
         -----------
             Save an image to the output directory
         Example
         -------
             img._save(img.img_backup, 'test.png')
-        '''
+        """
         
         # Name Check
         if not name:
@@ -657,13 +642,12 @@ class Image:
             print("Save successful.\n")
             is_success = True
             return is_success
-        
-    
+
     # Image Operations
-    def cvt_color(self, conversion:str, 
-                  get_data:bool= False,
-                  display:bool = True)->np.ndarray:
-        '''
+    def cvt_color(self, conversion: str,
+                  get_data: bool = False,
+                  display: bool = True) -> np.ndarray:
+        """
         Convert the images color space.
 
         Parameters
@@ -684,21 +668,20 @@ class Image:
         -------
         converted_img : np.ndarray
             The converted image.
-        '''
+        """
         if not display and not get_data:
-            return
+            return np.array([])
         # Check conversion validity
-        color_codes= {'gray':cv.COLOR_BGR2GRAY, 
-                      'HSV':cv.COLOR_BGR2HSV, 
-                      'RGB':cv.COLOR_BGR2RGB}
+        color_codes = {'gray': cv.COLOR_BGR2GRAY,
+                      'HSV': cv.COLOR_BGR2HSV,
+                      'RGB': cv.COLOR_BGR2RGB}
         valid_entries = [*color_codes.keys()]
         
         try:
-            if (conversion in valid_entries):
+            if conversion in valid_entries:
                 pass
             else:
-                raise ValueError('Incorrect Conversion Type.\n'\
-                                 'Valid options:\n{}'.format(valid_entries))
+                raise ValueError('Incorrect Conversion Type.\nValid options:\n{}'.format(valid_entries))
         except (TypeError, AttributeError):
             print("Incorrect Entry. Please use a string.\nValid Entries:")
             print(valid_entries)
@@ -713,12 +696,14 @@ class Image:
             self._display(converted_img)
         if get_data:
             return converted_img
-        
-    
-    
-    def color_rebalance(self, R_const:float, G_const:float,
-                        B_const:float, display:bool=True, get_data=False)->np.ndarray:
-        '''
+
+    def color_rebalance(self, 
+                        R_const: float, 
+                        G_const: float,
+                        B_const: float, 
+                        display: bool = True, 
+                        get_data=False) -> np.ndarray:
+        """
         Re-balances the color channels of the image based on provided factors.        
         
         Parameters
@@ -743,19 +728,18 @@ class Image:
         new_img : np.ndarray
             The rebalanced image.
             
-        '''
+        """
         if not display and not get_data:
-            return
+            return np.array([])
         
         # Check inputs
         try:
             if R_const < 0 or G_const < 0 or B_const < 0:
                 raise ValueError("Please insert non-negative numbers.")
         except TypeError:
-            print("\nColor Rebalance Error: Please insert numbers.\n")
-            return
-            
-            
+            print("\nColor Re-balance Error: Please insert numbers.\n")
+            return np.array([])
+
         constants = [B_const, G_const, R_const]
         # apply to image
         work_img = np.copy(self._img_backup)
@@ -765,7 +749,7 @@ class Image:
             channels[i] = (channels[i]*constants[i]).astype(np.uint8)
             
         # Channel validation
-        #print([channels[i].dtype for i in range(len(channels))])
+        # print([channels[i].dtype for i in range(len(channels))])
         
         new_img = cv.merge(channels)
         new_img = np.round(new_img).astype(np.uint8)
@@ -775,10 +759,9 @@ class Image:
             self._display(new_img)
         if get_data:
             return new_img
-    
-    
-    def get_color_space(self, duplicate_pixels:bool = False):
-        '''
+
+    def get_color_space(self, duplicate_pixels: bool = False):
+        """
         Parameters
         ----------
         duplicate_pixels : bool, optional
@@ -790,7 +773,7 @@ class Image:
         points: list
             The [(R), (G), (B)] points of each pixel .
 
-        '''
+        """
         # Data containers
         
         # Fill data containers
@@ -799,14 +782,13 @@ class Image:
     
         if not duplicate_pixels:
             # removes duplicates for uniform plotting.
-            unique_points = np.unique(color_points, axis=0) # For 2D array
+            unique_points = np.unique(color_points, axis=0)  # For 2D array
             return unique_points
         else:
             return color_points
-    
-    
-    def view_color_space(self, uniform:bool=False):
-        '''
+
+    def view_color_space(self, uniform: bool = False):
+        """
         View color space of the image.
 
         Parameters
@@ -815,7 +797,7 @@ class Image:
             Whether to plot the feature space with equal weighting.
             Returns a sample of the feature space otherwise.
             The default is False.
-        '''
+        """
         # Data containers
         if uniform:
             # Remove duplicates from color space
@@ -834,13 +816,13 @@ class Image:
         
         height, width, _ = self._img_backup.shape
         step = int(height * width / 2000)
-        ticks = list(range(0,250,50))
+        ticks = list(range(0, 250, 50))
         ticks.append(255)
 
         # Figure Axis settings
         ax.set(xlabel='R', ylabel='G', zlabel='B', 
-               xlim = (0,255), ylim = (0,255), zlim = (0,255),
-               xticks = ticks, yticks = ticks, zticks = ticks)
+               xlim=(0, 255), ylim=(0, 255), zlim=(0, 255),
+               xticks=ticks, yticks=ticks, zticks=ticks)
         
         # Plot the data
         name = os.path.splitext(self.name)[0]
@@ -852,12 +834,13 @@ class Image:
             ax.scatter(R[::step], G[::step], B[::step], color='k')
         # Show plot
         plt.show();
-        
-    
-        
-    def transform(self,*,translation_vals:np.ndarray=[0,0], angle:float=0,
-                  get_data:bool=False, display:bool=True):
-        '''
+
+    def transform(self, *, 
+                  translation_vals: np.ndarray = None, 
+                  angle: float = 0,
+                  get_data: bool = False, 
+                  display: bool = True) -> np.ndarray:
+        """
         Applies an affine transformation to the image using a combination
         of translation and rotation
 
@@ -881,15 +864,18 @@ class Image:
         -------
         transformed_img : np.ndarray
 
-        '''
+        """
         # 
         if not display and not get_data:
-            return
-        
+            return np.ndarray([])
+
+        if translation_vals is None:
+            translation_vals = np.zeros(2)
+
         transformed_img = np.copy(self._img_backup)
         
         # Generate transformation matrix
-        t_x,t_y = translation_vals
+        t_x, t_y = translation_vals
         
         T_mat = np.array([[1, 0, t_x],
                           [0, 1, t_y],
@@ -897,7 +883,7 @@ class Image:
         
         rows, cols, _ = transformed_img.shape
         R_mat = cv.getRotationMatrix2D(((cols-1)/2, (rows-1)/2), angle, 1)
-        R_mat = np.append(R_mat, [[0,0,1]], axis=0)
+        R_mat = np.append(R_mat, [[0, 0, 1]], axis=0)
         M_matrix = T_mat @ R_mat 
         M_matrix = M_matrix[0:2]
 
@@ -909,12 +895,11 @@ class Image:
             self._display(transformed_img)
         if get_data:
             return transformed_img
-        
-        
-    def SIFT(self, *,display:bool=True, 
-             in_color:bool=True, get_data:bool=False)->np.ndarray:
-        '''
-        Performs SIFT matching on the image for a 90 degree rotation.
+
+    def SIFT(self, *, display: bool = True,
+             in_color: bool = True, get_data: bool = False) -> list:
+        """
+        Performs SIFT matching on the image for a 90-degree rotation.
 
         Parameters
         ----------
@@ -928,12 +913,12 @@ class Image:
 
         Returns
         -------
-        SIFT image as an numpy array; Convenient for saving.
+        List with SIFT matches and the resulting image as a numpy array; Convenient for saving.
 
-        '''
+        """
         
         if not display and not get_data:
-            return
+            return []
         
         # Get worker images
         work_img = np.copy(self._img_backup)
@@ -955,7 +940,7 @@ class Image:
         
         # Apply ratio test
         good = []
-        for m,n in matches:
+        for m, n in matches:
             if m.distance < 0.75*n.distance:
                 good.append([m])
 
@@ -968,8 +953,8 @@ class Image:
         )
 
         SIFT_out_color = cv.drawMatchesKnn(
-            work_img,kp1_1,
-            ex_transform,kp1_2,
+            work_img, kp1_1,
+            ex_transform, kp1_2,
             good, None,
             flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
         )
@@ -986,13 +971,12 @@ class Image:
                 self._display(SIFT_out)
             if get_data:
                 return [good, SIFT_out]
-        
 
-    def ORB(self, *,display:bool=True, keepPercent:float=0.5,
-             in_color:bool=True,
-             get_data:bool=False)->np.ndarray:
-        '''
-        Performs ORB matching on the image for a 90 degree rotation.
+    def ORB(self, *, display: bool = True, keepPercent: float = 0.5,
+             in_color: bool = True,
+             get_data: bool = False) -> list:
+        """
+        Performs ORB matching on the image for a 90-degree rotation.
 
         Parameters
         ----------
@@ -1012,10 +996,10 @@ class Image:
         -------
         ORB image as an numpy array; Convenient for saving.
 
-        '''
+        """
         
         if not display and not get_data:
-            return
+            return []
         
         # check input
         if keepPercent > 1:
@@ -1023,8 +1007,7 @@ class Image:
         elif keepPercent < 0:
             print("Invalid input; Defaulting to 0.5")
             keepPercent = 0.5
-        
-        
+
         # Get worker images
         work_img = np.copy(self._img_backup)
         ex_transform = self.transform(angle=90,
@@ -1043,9 +1026,8 @@ class Image:
         bf2 = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
         ORB_matches = bf2.match(des2_1, des2_2)
 
-
         # Sort match descriptors in the order of their distance.
-        ORB_matches = sorted(ORB_matches, key = lambda x:x.distance)
+        ORB_matches = sorted(ORB_matches, key=lambda x: x.distance)
         keep = int(len(ORB_matches) * keepPercent)
         best_matches = ORB_matches[:keep]
         
@@ -1078,11 +1060,11 @@ class Image:
                 self._display(ORB_out)
             if get_data:
                 return [best_matches, ORB_out]
-            
 
     # ::Private methods::
-    def _format_path(self, path):
-        '''
+    @staticmethod
+    def _format_path(path):
+        """
 
         Parameters
         ----------
@@ -1093,27 +1075,26 @@ class Image:
         -------
         new_path : str
             The properly-formatted path string for OpenCV. Should be 
-            platform agnostic (Windows, Unix)
-        '''
+            platform-agnostic (Windows, Unix)
+        """
         try:
             new_path = path.strip("'")
             new_path = new_path.strip('"')
-            new_path = new_path.replace("\\", "/") # For Windows pathing
+            new_path = new_path.replace("\\", "/")  # For Windows pathing
             new_path = new_path.strip('//')  
         except AttributeError:
             print("\nWrong Type; Please insert a string.")
             raise
         return new_path
-    
-        
-    def _display(self, image:np.ndarray):
-        '''
+
+    def _display(self, image: np.ndarray):
+        """
         Displays the given image. Defaults to the original image.
         This method is private to prevent users from being able to display 
-        non-instance-origined images.
+        non-instance-origin-ed images.
         
         Meant for internal use (as in displaying output of a transformation)
-        '''
+        """
         # Default image to display
         if image is None:
             image = self.img_backup
