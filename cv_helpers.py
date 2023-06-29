@@ -446,6 +446,7 @@ class KMeans:
         
         # 2D case
         if dimensions == 2:
+            plt.close(fig=self._figure3D)
             ax = self._axes2D
             ax.clear()
             ax.set(xlabel='x', ylabel='y',
@@ -464,7 +465,7 @@ class KMeans:
             
         # 3D case
         elif dimensions == 3:
-            
+            plt.close(fig=self._figure2D)
             ax = self._axes3D
             ax.clear()
             
