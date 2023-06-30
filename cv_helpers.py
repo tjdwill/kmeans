@@ -27,7 +27,10 @@ class KMeans:
     # Class Variables
     # =================
     _THRESH_MAX: ClassVar[int] = 1
-
+    colors: ClassVar[list] = [color for color in 
+                              list(mcolors.TABLEAU_COLORS.values())]
+    WRAP_FACTOR: ClassVar[int] = len(colors)
+    
     # =================
     # Instance Variables
     # =================
@@ -47,14 +50,14 @@ class KMeans:
         self._threshold = threshold
         self._maxIterations = maxIterations
         self._initial_means = initial_means
-        
-        self._validateParams()
-        
+                
         # Plotting (2D and 3D cases)
         self._figure2D = plt.figure();
         self._axes2D = self._figure2D.add_subplot();
         self._figure3D = plt.figure();
         self._axes3D = self._figure3D.add_subplot(projection='3d');
+        
+        self._validateParams()
         # plt.ion()
 
     # ============
@@ -171,13 +174,13 @@ class KMeans:
                 means = np.array([data[np.random.randint(0, len(data))]
                          for _ in range(K_NUM)])
                 # Sanity Check
-                print(means)
                 length = len(means)
                 assert length == K_NUM
                 # Ensure no duplicate point
                 check = np.unique(means, axis=0)
                 if len(check) == length:
                     means_found = True
+                    print(means)
         # print(f'Means Check:\n{means}')   
         # Begin loop; Currently, the program will loop until each calculated
         # cluster centroid is within THRESH distance from the mean found in the
@@ -320,7 +323,20 @@ class KMeans:
                 print("\nNumber of mean points must == number of segments.\n")
                 raise
             self._initial_means = initial_means
-        print("KMeans: All parameters valid.")
+        # print("KMeans: All parameters valid.")
+        
+        # Close unused plot
+        # Intention: Get the number of dimensions of the data (Ex. [(0,0,0)]) has dimension 3 for the data.
+        data_dim = np.array(data).shape[-1] 
+        # print(f"VALIDATE DATA: {data_dim}")
+        if data_dim == 2:
+            plt.close(fig=self._figure3D)
+        elif data_dim == 3:
+            plt.close(fig=self._figure2D)
+        else:
+            # Close both
+            plt.close(fig=self._figure2D)
+            plt.close(fig=self._figure3D)
         return True
 
     def _assignLabels(self, means: list, data: list):
@@ -434,8 +450,8 @@ class KMeans:
         10 % 10 == 0 (Remember 0-based indexing).
         """
         
-        colors = [color for color in list(mcolors.TABLEAU_COLORS.values())]
-        WRAP_FACTOR = len(colors)
+        colors = KMeans.colors
+        WRAP_FACTOR = KMeans.WRAP_FACTOR
         
         # Get data
         clusters, centroids, iterations = data
@@ -446,7 +462,7 @@ class KMeans:
         
         # 2D case
         if dimensions == 2:
-            plt.close(fig=self._figure3D)
+            # plt.close(fig=self._figure3D)
             ax = self._axes2D
             ax.clear()
             ax.set(xlabel='x', ylabel='y',
@@ -459,13 +475,13 @@ class KMeans:
                            label=labels[i])
                 ax.scatter(cenX, cenY, color=colors[i % WRAP_FACTOR],
                            marker='o', s=50, zorder=3, edgecolor='k')
-            ax.legend()
+            # ax.legend()
             # ax.grid(visible=True, axis='both')
             plt.pause(0.05)
             
         # 3D case
         elif dimensions == 3:
-            plt.close(fig=self._figure2D)
+            # plt.close(fig=self._figure2D)
             ax = self._axes3D
             ax.clear()
             
@@ -839,6 +855,7 @@ class Image:
     def transform(self, *, 
                   translation_vals: np.ndarray = None, 
                   angle: float = 0,
+                  rotation_center: np.ndarray = None,
                   get_data: bool = False, 
                   display: bool = True) -> np.ndarray:
         """
@@ -854,6 +871,9 @@ class Image:
         angle : float, optional
             Rotates about the image center in degrees.
             The default is 0.
+        rotation_center: np.ndarray, optional
+            An array containing the coordinates of the point of rotation.
+            In [x,y] order.
         get_data : bool, optional
             Return the transformed image as a numpy array. 
             The default is False.
@@ -883,7 +903,12 @@ class Image:
                           [0, 0, 1]])
         
         rows, cols, _ = transformed_img.shape
-        R_mat = cv.getRotationMatrix2D(((cols-1)/2, (rows-1)/2), angle, 1)
+        if rotation_center is not None:
+            rot_x, rot_y = rotation_center.astype(np.float64)
+        else:
+            # Choose image center pixel
+            rot_x, rot_y = ((cols-1)/2, (rows-1)/2)
+        R_mat = cv.getRotationMatrix2D((rot_x, rot_y) , angle, 1)
         R_mat = np.append(R_mat, [[0, 0, 1]], axis=0)
         M_matrix = T_mat @ R_mat 
         M_matrix = M_matrix[0:2]
