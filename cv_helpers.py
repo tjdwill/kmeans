@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.colors as mcolors
 
-
+import time
 class KMeans:    
     """
         A class for implementing k-Means clustering. 
@@ -138,6 +138,9 @@ class KMeans:
         K_NUM = self.segments
         THRESH = self.threshold
         
+        if not display:
+            plt.close(self._figure2D)
+            plt.close(self._figure3D)
         # Check (preclude inf. loop)
         # If the length of the data is less than the target segment number, 
         # getting the initial means will result in an infinite loop. 
@@ -191,6 +194,7 @@ class KMeans:
         thresh_reached = False
         iterations = 0
         print("Cluster Iteration Count:")
+            
         while not thresh_reached:
             # Assign clusters
             iterations += 1
@@ -240,7 +244,7 @@ class KMeans:
             The segmented image. (RGB)
 
         """
-        # Setup: Copy the image and get the colors
+        # Setup: Copy the image and get the colors; Do I want to check for repeat colors? The change of that happening is so miniscule.
         print(f'Beginning Image Segmentation: {len(clusters)} segments.')
         seg_img = np.copy(image)
         if random_colors:
@@ -276,6 +280,32 @@ class KMeans:
             seg_img = seg_img.reshape(image.shape)
         return seg_img
 
+    def openfig(self, which_dimension:str):
+        """
+        A way to re-open a closed figure. Useful for remedying accidental exits.
+        Credit: https://stackoverflow.com/questions/31729948/matplotlib-how-to-show-a-figure-that-has-been-closed
+        """
+        
+        dim_string = which_dimension.lower()
+       
+        if dim_string == '2d':
+            blank = plt.figure()
+            fm = blank.canvas.manager
+            fig = self._figure2D
+            fm.canvas.figure = fig
+            plt.show()
+        elif dim_string == '3d':
+            blank = plt.figure()
+            fm = blank.canvas.manager
+            fig = self._figure3D
+            fm.canvas.figure = fig
+            fig.set_canvas(blank.canvas)
+            plt.show()
+        else:
+            print('Invalid input. Pass "2d" or "3d".')
+            return
+        
+            
     # ::Private methods::
     def _validateParams(self):
         # access and validate the data
