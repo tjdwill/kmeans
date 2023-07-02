@@ -65,7 +65,7 @@ class KMeans:
                 unaware of alternative methods.
 
             - (BONUS) Re-opening the figure(s):
-                Accidentally closing a <atplotlib figure and not being able to
+                Accidentally closing a Matplotlib figure and not being able to
                 open it again can be bothersome, so there is a method that can
                 "re-open" a figure.
     """
