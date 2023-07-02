@@ -31,13 +31,13 @@ class KMeans:
         > data.shape = (1, data.shape[0]).
         It should make each point a column entry:
             [[0], [1], [2], [3], [4]].
-        Pass this into the KMeans constructor.
+        Pass this version into the KMeans constructor.
 
         Data of higher dimensions (ex. a multi-channeled image)
         should be flattened using the number of indices
-        for the deepest dimension. So again, for an image with shape
+        for the deepest dimension. So, for an image with shape
         (480, 640, 3), run
-        > data = data.reshape(-1, 3)
+        * data = data.reshape(-1, 3)
         and pass this data into the constructor.
 
         Features
