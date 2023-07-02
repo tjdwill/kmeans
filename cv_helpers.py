@@ -16,21 +16,68 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.colors as mcolors
 
-import time
-class KMeans:    
+
+class KMeans:
     """
-        A class for implementing k-Means clustering. 
-        Clusters data and has the ability to perform image segmentation.
+        A class for implementing k-Means clustering, KMeans
+        segments data into clusters and has the ability
+        to perform image segmentation.
+
+        Initializing (Data Format)
+        --------------------------
+        Data must be in a 2D array. Meaning, if you have some data
+        such as data = np.array([0, 1, 2, 3, 4]), do the following:
+
+        > data.shape = (1, data.shape[0]).
+        It should make each point a column entry:
+            [[0], [1], [2], [3], [4]].
+        Pass this into the KMeans constructor.
+
+        Data of higher dimensions (ex. a multi-channeled image)
+        should be flattened using the number of indices
+        for the deepest dimension. So again, for an image with shape
+        (480, 640, 3), run
+        > data = data.reshape(-1, 3)
+        and pass this data into the constructor.
+
+        Features
+        --------
+            - Clustering (of course!):
+                Cluster data into a specified number of
+                clusters using user-defined thresholding and
+                iteration limit. All three parameters are adjustable via
+                attribute assignment.
+
+            - Segmenting Images:
+                Once you've clustered an image's colorspace
+                (if you're also using the Image class, there is a method
+                for this), pass in an RGB-ordered version of
+                the image (again, Image class can provide this, or just flip
+                the array about its color columns 'img_array[..., ::-1]'),
+                pass in the RGB image, the clusters, and the centroids.
+                The method can segment images using random colors or use the
+                centroids as the cluster colors.
+
+                *NOTE*:
+                Because the method has to iterate through every pixel of
+                every cluster, it can take a lot of time to run
+                (~0.056 s / pixel). At the time of writing, the author is
+                unaware of alternative methods.
+
+            - (BONUS) Re-opening the figure(s):
+                Accidentally closing a <atplotlib figure and not being able to
+                open it again can be bothersome, so there is a method that can
+                "re-open" a figure.
     """
 
     # =================
     # Class Variables
     # =================
     _THRESH_MAX: ClassVar[int] = 1
-    colors: ClassVar[list] = [color for color in 
+    colors: ClassVar[list] = [color for color in
                               list(mcolors.TABLEAU_COLORS.values())]
     WRAP_FACTOR: ClassVar[int] = len(colors)
-    
+
     # =================
     # Instance Variables
     # =================
@@ -39,25 +86,26 @@ class KMeans:
     threshold: float
     maxIterations: int
     initial_means: Iterable
-    
+
     # =================
     # Initialization
     # =================
-    def __init__(self, data, segments=2, initial_means=None, threshold=0.5, 
+    def __init__(self, data, segments=2, initial_means=None, threshold=0.5,
                  maxIterations=100):
         self._data = data
         self._segments = segments
         self._threshold = threshold
         self._maxIterations = maxIterations
         self._initial_means = initial_means
-                
-        # Plotting (2D and 3D cases)
-        self._figure2D = plt.figure();
-        self._axes2D = self._figure2D.add_subplot();
-        self._figure3D = plt.figure();
-        self._axes3D = self._figure3D.add_subplot(projection='3d');
-        
+
         self._validateParams()
+
+        # Plotting (2D and 3D cases)
+        self._figure2D = plt.figure()
+        self._axes2D = self._figure2D.add_subplot()
+        self._figure3D = plt.figure()
+        self._axes3D = self._figure3D.add_subplot(projection='3d')
+        self._closeplot()
         # plt.ion()
 
     # ============
@@ -68,7 +116,7 @@ class KMeans:
     def data(self):
         """Returns a copy of the object's data"""
         return copy.deepcopy(self._data)
-        
+
     @property
     def segments(self):
         """How many segments into which the data is clustered."""
@@ -96,8 +144,9 @@ class KMeans:
         if 0 <= value <= KMeans._THRESH_MAX:
             self._threshold = value
         else:
-            raise ValueError(f'Threshold must be between 0 and {KMeans._THRESH_MAX}')
-    
+            raise ValueError("Threshold must be between 0 and"
+                             f' {KMeans._THRESH_MAX}')
+
     @property
     def maxIterations(self):
         """Max number of iterations for k-Means clustering"""
@@ -115,7 +164,7 @@ class KMeans:
     # ===============
     # Class Methods
     # ===============
-    
+
     # ::Public methods::
     def cluster(self,
                 display: bool = True) -> list:
@@ -137,45 +186,45 @@ class KMeans:
         data = self.data
         K_NUM = self.segments
         THRESH = self.threshold
-        
+
         if not display:
             plt.close(self._figure2D)
             plt.close(self._figure3D)
         # Check (preclude inf. loop)
-        # If the length of the data is less than the target segment number, 
-        # getting the initial means will result in an infinite loop. 
-        # The program would never be able to get 
+        # If the length of the data is less than the target segment number,
+        # getting the initial means will result in an infinite loop.
+        # The program would never be able to get
         # the target number of unique points.
         if len(data) < K_NUM:
-            raise ValueError("Number of segments exceeds data points."\
-                             " Ensure data is in a 1-D iterable.\n"\
-                            "Length Data: {}, Segments: {}".format(len(data), 
-                                                                   K_NUM)
+            raise ValueError("Number of segments exceeds data points."
+                             " Ensure data is in a 1-D iterable.\n"
+                             "Length Data: {}, Segments: {}".format(len(data),
+                                                                    K_NUM)
                              )
         # print(f'Data: {data}\nSegments:{K_NUM}')
-        
+
         # Declare variables
         clusters, centroids = None, None
         means = None
-        
+
         # ===================
         # Set initial means
         # ===================
-        
+
         # Perform checks on user-passed means.
-        if self._initial_means is not None:            
+        if self._initial_means is not None:
             means = self._initial_means
         else:
             # get k random points to serve as initial means
             print("Generating initial means...")
             means_found = False
-            
-            # Loop until the mean points are found. It shouldn't loop at 
-            # all since repeat points are unlikely, but with randomization, 
+
+            # Loop until the mean points are found. It shouldn't loop at
+            # all since repeat points are unlikely, but with randomization,
             # there's always a chance, so I placed the check for uniqueness.
             while not means_found:
                 means = np.array([data[np.random.randint(0, len(data))]
-                         for _ in range(K_NUM)])
+                                  for _ in range(K_NUM)])
                 # Sanity Check
                 length = len(means)
                 assert length == K_NUM
@@ -184,17 +233,17 @@ class KMeans:
                 if len(check) == length:
                     means_found = True
                     print(means)
-        # print(f'Means Check:\n{means}')   
+        # print(f'Means Check:\n{means}')
         # Begin loop; Currently, the program will loop until each calculated
         # cluster centroid is within THRESH distance from the mean found in the
         # previous iteration, or until the iteration limit is reached,
         # whichever happens first.
-        # I may change this calculation to use data variance in the future 
+        # I may change this calculation to use data variance in the future
         # if that's more "official."
         thresh_reached = False
         iterations = 0
         print("Cluster Iteration Count:")
-            
+
         while not thresh_reached:
             # Assign clusters
             iterations += 1
@@ -202,7 +251,7 @@ class KMeans:
                 print("Max iterations reached. Returning output.")
                 thresh_reached = True
             print(iterations)
- 
+
             clusters = self._assignLabels(means, data)
             # print(f'Clusters: {clusters}')
             centroids = self._findCentroid(clusters)
@@ -210,7 +259,7 @@ class KMeans:
             # Live plot the data
             if display:
                 self._display([clusters, centroids, iterations])
-                
+
             # Compare centroids to previous means.
             for i in range(len(centroids)):
                 distance = self._calcDistance(centroids[i], means[i])
@@ -222,8 +271,8 @@ class KMeans:
                 thresh_reached = True
         if iterations < self._maxIterations:
             print("Successful cluster operation.\n")
-        return [clusters, centroids, iterations]    
-    
+        return [clusters, centroids, iterations]
+
     @staticmethod
     def segment_img(image: np.ndarray, clusters: dict, centroids: list,
                     random_colors: bool = False) -> np.ndarray:
@@ -244,7 +293,9 @@ class KMeans:
             The segmented image. (RGB)
 
         """
-        # Setup: Copy the image and get the colors; Do I want to check for repeat colors? The change of that happening is so miniscule.
+        # Setup: Copy the image and get the colors;
+        # Do I want to check for repeat colors?
+        # The chance of that happening is so miniscule.
         print(f'Beginning Image Segmentation: {len(clusters)} segments.')
         seg_img = np.copy(image)
         if random_colors:
@@ -254,17 +305,22 @@ class KMeans:
         else:
             # Use centroid color
             colors = np.round(centroids, 0)
-            
+
         # Inspiration (and much gratitude):
         # https://stackoverflow.com/questions/16094563/numpy-get-index-where-value-is-true
         # Use Numpy nonzero function to find the indices of all elements that
-        # match a given pixel in a cluster. 
+        # match a given pixel in a cluster.
         # Use those indices to replace the pixel values
         # therein with the segmentation color.
-        
+
+        '''
+        Iterating through a given cluster takes the most time.
+        Can I make this faster?
+        '''
         seg_img = seg_img.reshape(-1, 3)
         for cluster in clusters:
-            # Remember that the keys in the dictionary range from 0 to k-1, so they also
+            # Remember that the keys in the dictionary range from
+            # 0 to k-1, so they also
             # double as indices.
             print(f'Cluster {cluster}')
             seg_color = colors[cluster]
@@ -275,19 +331,19 @@ class KMeans:
                 # print(indices[0])
                 seg_img[indices[0]] = seg_color
         else:
-            # Please include the 'else' statement to prevent a tremendous 
+            # Please include the 'else' statement to prevent a tremendous
             # debugging headache. Watch the indentation.
             seg_img = seg_img.reshape(image.shape)
         return seg_img
 
-    def openfig(self, which_dimension:str):
+    def openfig(self, which_dimension: str):
         """
-        A way to re-open a closed figure. Useful for remedying accidental exits.
-        Credit: https://stackoverflow.com/questions/31729948/matplotlib-how-to-show-a-figure-that-has-been-closed
+        A way to re-open a closed figure.
+        Useful for remedying accidental exits.
         """
-        
+        # Credit: https://stackoverflow.com/questions/31729948/matplotlib-how-to-show-a-figure-that-has-been-closed  #noqa
         dim_string = which_dimension.lower()
-       
+
         if dim_string == '2d':
             blank = plt.figure()
             fm = blank.canvas.manager
@@ -304,8 +360,7 @@ class KMeans:
         else:
             print('Invalid input. Pass "2d" or "3d".')
             return
-        
-            
+
     # ::Private methods::
     def _validateParams(self):
         # access and validate the data
@@ -315,32 +370,38 @@ class KMeans:
         MAX_ITERATIONS = self._maxIterations
         initial_means = self._initial_means
         accepted_types = [list, tuple, np.ndarray]
-        
+
         if np.array(data).ndim != 2:
-            raise ValueError("Data *must* be w/in a 1-D container.\nEx. [(0, 0), (2,3)]")
+            raise ValueError("Data *must* be w/in a 1-D container.\nEx. "
+                             "[(0, 0), (2,3)]")
         if K_NUM < 1:
             raise ValueError("Number of segments must be at least one.")
         elif K_NUM > len(data):
-            raise ValueError("Number of segments cannot exceed number of data points.")
+            raise ValueError("Number of segments cannot exceed "
+                             "number of data points.\n"
+                             "Length Data: {}, Segments: {}".format(len(data),
+                                                                    K_NUM))
         if THRESH < 0 or THRESH > KMeans._THRESH_MAX:
             raise ValueError("Cannot have a negative threshold value.")
         if MAX_ITERATIONS <= 0:
             raise ValueError("Must have at least one iteration.")
-            
+
         if initial_means is not None:
             if type(initial_means) not in accepted_types:
-                raise TypeError(f'Means container must be one of the following:\n{accepted_types}')
+                raise TypeError('Means container must be one of the following:'
+                                f'\n{accepted_types}')
             # Check element types and values.
             if not all([type(arr) in accepted_types for arr in initial_means]):
-                raise TypeError(f'Elements must be one of the following types:\n{accepted_types}')
-            if not all(any(np.equal(data, element).all(1)) 
+                raise TypeError('Elements must be one of the following types:'
+                                f'\n{accepted_types}')
+            if not all(any(np.equal(data, element).all(1))
                        for element in initial_means):
                 raise ValueError("Provided means must be among the data.")
             # Remove duplicates and check remaining length
             # Turns out np.unique changes the order of the data.
             # https://stackoverflow.com/questions/15637336/numpy-unique-with-order-preserved
             # print(f'Before: {initial_means}')
-            initial_means, ndx = np.unique(initial_means, axis=1, 
+            initial_means, ndx = np.unique(initial_means, axis=1,
                                            return_index=True)
             # print(ndx)
             initial_means = initial_means[:, ndx]
@@ -354,10 +415,14 @@ class KMeans:
                 raise
             self._initial_means = initial_means
         # print("KMeans: All parameters valid.")
-        
+
+        return True
+
+    def _closeplot(self):
         # Close unused plot
-        # Intention: Get the number of dimensions of the data (Ex. [(0,0,0)]) has dimension 3 for the data.
-        data_dim = np.array(data).shape[-1] 
+        # Intention: Get the number of dimensions of the data
+        # (Ex. [(0,0,0)]) has dimension 3 for the data.
+        data_dim = np.array(self._data).shape[-1]
         # print(f"VALIDATE DATA: {data_dim}")
         if data_dim == 2:
             plt.close(fig=self._figure3D)
@@ -367,7 +432,6 @@ class KMeans:
             # Close both
             plt.close(fig=self._figure2D)
             plt.close(fig=self._figure3D)
-        return True
 
     def _assignLabels(self, means: list, data: list):
         """
@@ -376,7 +440,7 @@ class KMeans:
         Parameters
         ----------
         means : list
-            The current list of cluster means. 
+            The current list of cluster means.
             Randomly chosen for first iteration.
         data : list
             The data to be organized.
@@ -386,7 +450,7 @@ class KMeans:
         clusters : dictionary
 
         """
-        # Organizes the data into clusters based on which mean 
+        # Organizes the data into clusters based on which mean
         # is closest to a given point.
         K_NUM = self._segments
         clusters = {k: [] for k in range(K_NUM)}
@@ -394,21 +458,35 @@ class KMeans:
 
         for point in data:
             # Initialize ridiculously high number to begin comparisons.
-            old_dist = 1E1000 
+            old_dist = 1E1000
             for i in range(len(means)):
                 new_dist = self._calcDistance(point, means[i])
-                
+
                 if new_dist < old_dist:
                     # Track index of the closest mean point
                     (old_dist, index) = (new_dist, i)
             else:
                 # Add point to label bin
                 clusters[index].append(point)
-                
+
         return clusters
-        
+
     @staticmethod
     def _calcDistance(point1: Iterable, point2: Iterable = None):
+        """
+        Calculate Euclidean distance between two points.
+
+        Parameters
+        ----------
+        point1 : Iterable
+        point2 : Iterable, optional
+            Defaults to the zero vector.
+
+        Returns
+        -------
+        distance : np.float64
+
+        """
         # check input
         if not isinstance(point1, Iterable):
             point1 = [point1]
@@ -417,24 +495,24 @@ class KMeans:
         else:
             if not isinstance(point2, Iterable):
                 point2 = [point2]
-                
-        # Cast as numpy arrays to prevent overflow
-        point1 = np.array(point1, dtype=np.float64)
-        point2 = np.array(point2, dtype=np.float64)
-        
+
         try:
             assert len(point1) == len(point2)
         except AssertionError:
             print('\nBoth points must have same dimension.')
             raise
-            
-        # Perform Calculation  
+
+        # Cast as numpy arrays to prevent overflow
+        point1 = np.array(point1, dtype=np.float64)
+        point2 = np.array(point2, dtype=np.float64)
+
+        # Perform Calculation
         sqr_dist = (point1-point2)**2
         sqr_dist = sqr_dist.sum()
-        dist = np.sqrt(sqr_dist)
-        
-        return dist
-        
+        distance = np.sqrt(sqr_dist)
+
+        return distance
+
     @staticmethod
     def _findCentroid(clusters: Iterable):
         """
@@ -451,11 +529,11 @@ class KMeans:
 
         """
         # Calculate the centroid for each cluster in the bin.
-        # Takes in any iterable, but seeing as the data is labeled, it should be
-        # a dictionary whose keys range from 0 to some n. 
-        # However, I'm leaving it to work for more iterables in case I need to 
+        # Takes in any iterable, but seeing as the data is labeled,
+        # it should be a dictionary whose keys range from 0 to some n.
+        # However, I'm leaving it to work for more iterables in case I need to
         # change the design in the future.
-        
+
         centroids = []
         for i in range(len(clusters)):
             label_bin = np.array(clusters[i], dtype=np.float64)
@@ -469,27 +547,27 @@ class KMeans:
         ...
         # Assume we are passed the clusters, centroids, and iterations count
         # TO-DO: Figure out how to get the centroid to show in a 3D cluster.
-        
+
         # Color list
-        # Matplotlib Colors: 
+        # Matplotlib Colors:
         # https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_color_data.py
-        """ 
+        """
         The WRAP_FACTOR causes the colors to be reused after exhaustion
-        For example, if len(colors) == 10, but K_NUM == 11, 
-        The 11th cluster will use the first value in colors because 
+        For example, if len(colors) == 10, but K_NUM == 11,
+        The 11th cluster will use the first value in colors because
         10 % 10 == 0 (Remember 0-based indexing).
         """
-        
+
         colors = KMeans.colors
         WRAP_FACTOR = KMeans.WRAP_FACTOR
-        
+
         # Get data
         clusters, centroids, iterations = data
         # print(clusters[0][0])
         dimensions = len(clusters[0][0])
         # print(f'Data Dimensions: {dimensions}')
         labels = ['Cluster {}'.format(i) for i in range(len(clusters))]
-        
+
         # 2D case
         if dimensions == 2:
             # plt.close(fig=self._figure3D)
@@ -508,13 +586,13 @@ class KMeans:
             # ax.legend()
             # ax.grid(visible=True, axis='both')
             plt.pause(0.05)
-            
+
         # 3D case
         elif dimensions == 3:
             # plt.close(fig=self._figure2D)
             ax = self._axes3D
             ax.clear()
-            
+
             # Plot setup
             ax.set(xlabel='R', ylabel='G', zlabel='B',
                    title='k-Means Iteration {}\nk = {}'.format(iterations,
@@ -531,18 +609,39 @@ class KMeans:
         else:
             # print("Data is neither 2D nor 3D. Returning.")
             return
-    
+
 
 class Image:
     """
-        A class to make typical OpenCV operations simpler for myself.
+    Purpose: A class to make typical OpenCV operations simpler for myself.
+
+    How to use:
+        Pass the target image's path name to the constructor.
+    Example:
+        - path = '~/images/pic01.png'
+        - img = Image(path)
+        - img.display()  # view the object
+
+    Display np.ndarray images:
+
+    Wraps a call to cv.imshow and cv.waitKey(1)
+        - sample = np.random.randint(0, 255, size=(480, 640, 3))
+        * Image.view_img(sample)
+
+    Notable Features:
+        - Colorspace conversions (to gray, RGB, and HSV)
+        - Color Rebalancing via multiplicative constants
+        - Feature matching example via OpenCV SIFT and ORB
+        - Image transformations (rotation and translation) via OpenCV
+        - Save a given np.ndarray image to generator image's directory*
+        *Output directory is changeable.
     """
 
     # =================
     # Class Variables
     # =================
-    
-    # Incrementing this variable allows 
+
+    # Incrementing this variable allows
     # the class to display multiple image windows.
     _img_label: ClassVar[int] = 0
 
@@ -555,17 +654,17 @@ class Image:
     # Initialization
     # =================
     def __init__(self, in_path):
-        
+
         self._img_path = self._format_path(in_path)
-        
+
         # check if image exists on system
         if not os.path.isfile(self._img_path):
             raise ValueError("ERROR: Image file does not exist.")
-            
-        # set output path    
+
+        # set output path
         self._output_dir, self._name = os.path.split(self._img_path)
         self._output_dir += '/'
-        
+
         # Load image
         self._img_backup = cv.imread(self._img_path)
         assert self._img_backup is not None
@@ -573,23 +672,27 @@ class Image:
     # ============
     # Properties
     # ============
-    
+
     @property
     def output_dir(self):
         """
-        The output directory of the image. Determines where operations are saved.
+        The output directory of the image.
+        Determines where operations are saved.
         """
         return self._output_dir
+
     @output_dir.setter
     def output_dir(self, path: str):
         if not path:
-            raise ValueError('No path name provided.\nCurrent output directory:\n"{}"'.
+            raise ValueError('No path name provided.\n'
+                             'Current output directory:\n"{}"'.
                   format(self.output_dir))
-        
+
         new_path = self._format_path(path)
         if not os.path.isdir(new_path):
-            raise ValueError('\nCannot set output directory; it does not exist.')
-                   
+            raise ValueError('\nCannot set output directory;'
+                             ' it does not exist.')
+
         else:
             # Formatting choice; makes image saving easier for users.
             if new_path[-1] != '/':
@@ -629,13 +732,13 @@ class Image:
         """
         height, width, _ = self._img_backup.shape
         return height, width
-        
+
     # ===============
     # Class Methods
     # ===============
-    
+
     # ::Public methods::
-    
+
     @staticmethod
     def view_img(image: np.ndarray):
         """
@@ -647,7 +750,7 @@ class Image:
 
         """
         if image is not None and isinstance(image, np.ndarray):
-            cv.imshow("Image Class Display {}".format(Image._img_label), image) 
+            cv.imshow("Image Class Display {}".format(Image._img_label), image)
             cv.waitKey(1)
             Image._img_label += 1
         else:
@@ -667,14 +770,14 @@ class Image:
         -------
             img._save(img.img_backup, 'test.png')
         """
-        
+
         # Name Check
         if not name:
             raise ValueError("Could not save image. No name given.")
-        
+
         # Set return boolean
         is_success = False
-        
+
         # try the save operation
         saving_path = self._output_dir + name
         try:
@@ -700,9 +803,9 @@ class Image:
         Parameters
         ----------
         conversion : str
-            The space to convert to (ex. HSV). 
+            The space to convert to (ex. HSV).
         get_data : bool, optional
-            Whether to return the converted image as a numpy array. 
+            Whether to return the converted image as a numpy array.
             The default is False.
         display : bool, optional
             Display the converted image. The default is True.
@@ -720,39 +823,40 @@ class Image:
             return np.array([])
         # Check conversion validity
         color_codes = {'gray': cv.COLOR_BGR2GRAY,
-                      'HSV': cv.COLOR_BGR2HSV,
-                      'RGB': cv.COLOR_BGR2RGB}
+                       'HSV': cv.COLOR_BGR2HSV,
+                       'RGB': cv.COLOR_BGR2RGB}
         valid_entries = [*color_codes.keys()]
-        
+
         try:
             if conversion in valid_entries:
                 pass
             else:
-                raise ValueError('Incorrect Conversion Type.\nValid options:\n{}'.format(valid_entries))
+                raise ValueError('Incorrect Conversion Type.\nValid options:'
+                                 '\n{}'.format(valid_entries))
         except (TypeError, AttributeError):
             print("Incorrect Entry. Please use a string.\nValid Entries:")
             print(valid_entries)
             raise
-        
+
         # Implement conversion
         work_img = np.copy(self._img_backup)
         converted_img = cv.cvtColor(work_img, color_codes[conversion])
-        
+
         # Boolean Actions
         if display:
             self._display(converted_img)
         if get_data:
             return converted_img
 
-    def color_rebalance(self, 
-                        R_const: float, 
+    def color_rebalance(self,
+                        R_const: float,
                         G_const: float,
-                        B_const: float, 
-                        display: bool = True, 
+                        B_const: float,
+                        display: bool = True,
                         get_data=False) -> np.ndarray:
         """
-        Re-balances the color channels of the image based on provided factors.        
-        
+        Re-balances the color channels of the image based on provided factors.
+
         Parameters
         ----------
         R_const : float
@@ -774,11 +878,11 @@ class Image:
         -------
         new_img : np.ndarray
             The rebalanced image.
-            
+
         """
         if not display and not get_data:
             return np.array([])
-        
+
         # Check inputs
         try:
             if R_const < 0 or G_const < 0 or B_const < 0:
@@ -794,13 +898,13 @@ class Image:
 
         for i in range(len(constants)):
             channels[i] = (channels[i]*constants[i]).astype(np.uint8)
-            
+
         # Channel validation
         # print([channels[i].dtype for i in range(len(channels))])
-        
+
         new_img = cv.merge(channels)
         new_img = np.round(new_img).astype(np.uint8)
-        
+
         # Display
         if display:
             self._display(new_img)
@@ -822,11 +926,11 @@ class Image:
 
         """
         # Data containers
-        
+
         # Fill data containers
         work_img = self.cvt_color('RGB', get_data=True, display=False)
         color_points = work_img.reshape(-1, 3)
-    
+
         if not duplicate_pixels:
             # removes duplicates for uniform plotting.
             unique_points = np.unique(color_points, axis=0)  # For 2D array
@@ -849,28 +953,28 @@ class Image:
         if uniform:
             # Remove duplicates from color space
             points = self.get_color_space()
-            
-        else:   
+
+        else:
             points = self.get_color_space(duplicate_pixels=True)
-        
+
         R, G, B = zip(*points)
         # Data manipulation
         # Get Unique Data
-        
+
         # Plot Configuration
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        
+
         height, width, _ = self._img_backup.shape
         step = int(height * width / 2000)
         ticks = list(range(0, 250, 50))
         ticks.append(255)
 
         # Figure Axis settings
-        ax.set(xlabel='R', ylabel='G', zlabel='B', 
+        ax.set(xlabel='R', ylabel='G', zlabel='B',
                xlim=(0, 255), ylim=(0, 255), zlim=(0, 255),
                xticks=ticks, yticks=ticks, zticks=ticks)
-        
+
         # Plot the data
         name = os.path.splitext(self.name)[0]
         if uniform:
@@ -880,13 +984,13 @@ class Image:
             ax.set_title("{}'s Sampled Feature Space".format(name))
             ax.scatter(R[::step], G[::step], B[::step], color='k')
         # Show plot
-        plt.show();
+        plt.show()
 
-    def transform(self, *, 
-                  translation_vals: np.ndarray = None, 
+    def transform(self, *,
+                  translation_vals: np.ndarray = None,
                   angle: float = 0,
                   rotation_center: np.ndarray = None,
-                  get_data: bool = False, 
+                  get_data: bool = False,
                   display: bool = True) -> np.ndarray:
         """
         Applies an affine transformation to the image using a combination
@@ -905,18 +1009,17 @@ class Image:
             An array containing the coordinates of the point of rotation.
             In [x,y] order.
         get_data : bool, optional
-            Return the transformed image as a numpy array. 
+            Return the transformed image as a numpy array.
             The default is False.
         display : bool, optional
             Display the transformed image. The default is True.
-       
 
         Returns
         -------
         transformed_img : np.ndarray
 
         """
-        # 
+
         if not display and not get_data:
             return np.ndarray([])
 
@@ -924,29 +1027,29 @@ class Image:
             translation_vals = np.zeros(2)
 
         transformed_img = np.copy(self._img_backup)
-        
+
         # Generate transformation matrix
         t_x, t_y = translation_vals
-        
+
         T_mat = np.array([[1, 0, t_x],
                           [0, 1, t_y],
                           [0, 0, 1]])
-        
+
         rows, cols, _ = transformed_img.shape
         if rotation_center is not None:
             rot_x, rot_y = rotation_center.astype(np.float64)
         else:
             # Choose image center pixel
             rot_x, rot_y = ((cols-1)/2, (rows-1)/2)
-        R_mat = cv.getRotationMatrix2D((rot_x, rot_y) , angle, 1)
+        R_mat = cv.getRotationMatrix2D((rot_x, rot_y), angle, 1)
         R_mat = np.append(R_mat, [[0, 0, 1]], axis=0)
-        M_matrix = T_mat @ R_mat 
+        M_matrix = T_mat @ R_mat
         M_matrix = M_matrix[0:2]
 
         # Apply transformation
-        transformed_img = cv.warpAffine(transformed_img, M_matrix, 
+        transformed_img = cv.warpAffine(transformed_img, M_matrix,
                                         (cols, rows))
-        
+
         if display:
             self._display(transformed_img)
         if get_data:
@@ -964,18 +1067,18 @@ class Image:
         in_color : bool, optional
             Display in color or grayed. The default is True.
         get_data : bool, optional
-            Return data in the form [matches, matched_img]; 
+            Return data in the form [matches, matched_img];
             Default False.
 
         Returns
         -------
-        List with SIFT matches and the resulting image as a numpy array; Convenient for saving.
-
+        List with SIFT matches and the resulting image as a numpy array;
+        Convenient for saving.
         """
-        
+
         if not display and not get_data:
             return []
-        
+
         # Get worker images
         work_img = np.copy(self._img_backup)
         ex_transform = self.transform(angle=90,
@@ -983,17 +1086,17 @@ class Image:
                                       display=False)
         gray = self.cvt_color('gray', get_data=True, display=False)
         gray_transformed = cv.cvtColor(ex_transform, cv.COLOR_BGR2GRAY)
-        
+
         # Begin SIFT
-        # Source: https://docs.opencv.org/3.4/da/df5/tutorial_py_sift_intro.html
+        # Source: https://docs.opencv.org/3.4/da/df5/tutorial_py_sift_intro.html #noqa
         sift = cv.SIFT.create()
         kp1_1, des1_1 = sift.detectAndCompute(gray, None)
         kp1_2, des1_2 = sift.detectAndCompute(gray_transformed, None)
-        
+
         # BFMatcher with default params
         bf = cv.BFMatcher()
         matches = bf.knnMatch(des1_1, des1_2, k=2)
-        
+
         # Apply ratio test
         good = []
         for m, n in matches:
@@ -1015,7 +1118,7 @@ class Image:
             flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
         )
         print(f'SIFT matches: {len(good)}')
-        
+
         # Display and/or return data
         if in_color:
             if display:
@@ -1029,8 +1132,8 @@ class Image:
                 return [good, SIFT_out]
 
     def ORB(self, *, display: bool = True, keepPercent: float = 0.5,
-             in_color: bool = True,
-             get_data: bool = False) -> list:
+            in_color: bool = True,
+            get_data: bool = False) -> list:
         """
         Performs ORB matching on the image for a 90-degree rotation.
 
@@ -1045,7 +1148,7 @@ class Image:
         in_color : bool, optional
             Display in color or grayed. The default is True.
         get_data : bool, optional
-            Return data in the form [matches, matched_img]; 
+            Return data in the form [matches, matched_img];
             Default False.
 
         Returns
@@ -1053,10 +1156,10 @@ class Image:
         ORB image as an numpy array; Convenient for saving.
 
         """
-        
+
         if not display and not get_data:
             return []
-        
+
         # check input
         if keepPercent > 1:
             keepPercent = 1
@@ -1071,7 +1174,7 @@ class Image:
                                       display=False)
         gray = self.cvt_color('gray', get_data=True, display=False)
         gray_transformed = cv.cvtColor(ex_transform, cv.COLOR_BGR2GRAY)
-        
+
         # Apply ORB
         # Source: https://docs.opencv.org/3.4/dc/dc3/tutorial_py_matcher.html
         orb = cv.ORB_create()
@@ -1086,7 +1189,7 @@ class Image:
         ORB_matches = sorted(ORB_matches, key=lambda x: x.distance)
         keep = int(len(ORB_matches) * keepPercent)
         best_matches = ORB_matches[:keep]
-        
+
         # Draw matches.
         ORB_out = cv.drawMatches(
             gray, kp2_1,
@@ -1100,17 +1203,17 @@ class Image:
             best_matches, None,
             flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
         )
-        
+
         print(f'Total ORB matches: {len(ORB_matches)}')
         print(f'Best ORB matches: {len(best_matches)}')
-        
+
         # Display and/or return data
         if in_color:
             if display:
                 self._display(ORB_out_color)
             if get_data:
                 return [best_matches, ORB_out_color]
-            
+
         else:
             if display:
                 self._display(ORB_out)
@@ -1130,14 +1233,14 @@ class Image:
         Returns
         -------
         new_path : str
-            The properly-formatted path string for OpenCV. Should be 
+            The properly-formatted path string for OpenCV. Should be
             platform-agnostic (Windows, Unix)
         """
         try:
             new_path = path.strip("'")
             new_path = new_path.strip('"')
             new_path = new_path.replace("\\", "/")  # For Windows pathing
-            new_path = new_path.strip('//')  
+            new_path = new_path.strip('//')
         except AttributeError:
             print("\nWrong Type; Please insert a string.")
             raise
@@ -1146,17 +1249,17 @@ class Image:
     def _display(self, image: np.ndarray):
         """
         Displays the given image. Defaults to the original image.
-        This method is private to prevent users from being able to display 
+        This method is private to prevent users from being able to display
         non-instance-origin-ed images.
-        
+
         Meant for internal use (as in displaying output of a transformation)
         """
         # Default image to display
         if image is None:
             image = self.img_backup
-            
+
         print("Press 'q' or 'ESC' to exit.")
-        
+
         while True:
             cv.imshow("{}'s Output".format(os.path.splitext(self.name)[0]),
                       image)
