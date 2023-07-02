@@ -28,9 +28,9 @@ class KMeans:
         Data must be in a 2D array. Meaning, if you have some data
         such as data = np.array([0, 1, 2, 3, 4]), do the following:
 
-        * data.shape = (1, data.shape[0]).
+        * data.shape = (1, data.shape[0])
         It should make each point a column entry:
-            [[0], [1], [2], [3], [4]].
+            [[0], [1], [2], [3], [4]]
         Pass this version into the KMeans constructor.
 
         Data of higher dimensions (ex. a multi-channeled image)
@@ -42,32 +42,32 @@ class KMeans:
 
         Features
         --------
-            - Clustering (of course!):
-                Cluster data into a specified number of
-                clusters using user-defined thresholding and
-                iteration limit. All three parameters are adjustable via
-                attribute assignment.
+        - Clustering (of course!):
+            Cluster data into a specified number of
+            clusters using user-defined thresholding and
+            iteration limit. All three parameters are adjustable via
+            attribute assignment.
 
-            - Segmenting Images:
-                Once you've clustered an image's colorspace
-                (if you're also using the Image class, there is a method
-                for this), pass in an RGB-ordered version of
-                the image (again, Image class can provide this, or just flip
-                the array about its color columns 'img_array[..., ::-1]'),
-                pass in the RGB image, the clusters, and the centroids.
-                The method can segment images using random colors or use the
-                centroids as the cluster colors.
+        - Segmenting Images:
+            Once you've clustered an image's colorspace
+            (if you're also using the Image class, there is a method
+            for this), pass in an RGB-ordered version of
+            the image (again, Image class can provide this, or just flip
+            the array about its color columns 'img_array[..., ::-1]'),
+            pass in the RGB image, the clusters, and the centroids.
+            The method can segment images using random colors or use the
+            centroids as the cluster colors.
 
-                *NOTE*:
-                Because the method has to iterate through every pixel of
-                every cluster, it can take a lot of time to run
-                (~0.056 s / pixel). At the time of writing, the author is
-                unaware of alternative methods.
+            *NOTE*:
+            Because the method has to iterate through every pixel of
+            every cluster, it can take a lot of time to run
+            (~0.056 s / pixel). At the time of writing, the author is
+            unaware of alternative methods.
 
-            - (BONUS) Re-opening the figure(s):
-                Accidentally closing a Matplotlib figure and not being able to
-                open it again can be bothersome, so there is a method that can
-                "re-open" a figure.
+        - (BONUS) Re-opening the figure(s):
+            Accidentally closing a Matplotlib figure and not being able to
+            open it again can be bothersome, so there is a method that can
+            "re-open" a figure.
     """
 
     # =================
