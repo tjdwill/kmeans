@@ -318,11 +318,20 @@ class KMeans:
         Can I make this faster?
         '''
         seg_img = seg_img.reshape(-1, 3)
+        # Prepare percentage calculation variables
+        total_cnt = 0
+        for key in clusters:
+            total_cnt += len(clusters[key])
+
+        print(total_cnt)
+
+        count = 0
+        print('Segmentation Completion (%)')
+        old_percent = -1
         for cluster in clusters:
             # Remember that the keys in the dictionary range from
             # 0 to k-1, so they also
             # double as indices.
-            print(f'Cluster {cluster}')
             seg_color = colors[cluster]
             for pixel in clusters[cluster]:
                 # Get indices where image is equal to pixel
@@ -330,6 +339,13 @@ class KMeans:
                 indices = np.nonzero(np.all(np.equal(pixel, seg_img), axis=1))
                 # print(indices[0])
                 seg_img[indices[0]] = seg_color
+                count += 1
+
+                # Print progress
+                percentage = round((count / total_cnt) * 100, ndigits=2)
+                if percentage % 5 == 0 and percentage != old_percent:
+                    print(percentage, end=' ')
+                    old_percent = percentage
         else:
             # Please include the 'else' statement to prevent a tremendous
             # debugging headache. Watch the indentation.
