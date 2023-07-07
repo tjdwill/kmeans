@@ -1,5 +1,5 @@
 # imgClass
-A repository documenting the implementation of a helper class for basic image operations. 
+A repository documenting the implementation of classes for basic image operations. 
 
 
 Example: k-Means implementation
