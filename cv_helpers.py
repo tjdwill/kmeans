@@ -105,7 +105,8 @@ class KMeans:
         self._axes2D = self._figure2D.add_subplot()
         self._figure3D = plt.figure()
         self._axes3D = self._figure3D.add_subplot(projection='3d')
-        self._closeplot()
+        # Close unused figure(s)
+        self.closefig()
         # plt.ion()
 
     # ============
@@ -352,10 +353,40 @@ class KMeans:
             seg_img = seg_img.reshape(image.shape)
         return seg_img
 
+    def closefig(self, close_all=False):
+        """
+        A method to close the generated figures.
+
+        Parameter(s):
+        close_all: bool
+            Close all (both) plots. Defaults to False.
+        """
+        # Close unused plot
+        # Intention: Get the number of dimensions of the data
+        # (Ex. [(0,0,0)]) has dimension 3 for the data.
+        data_dim = np.array(self._data).shape[-1]
+        # print(f"VALIDATE DATA: {data_dim}")
+        if close_all:
+            plt.close(fig=self._figure2D)
+            plt.close(fig=self._figure3D)
+        elif data_dim == 2:
+            plt.close(fig=self._figure3D)
+        elif data_dim == 3:
+            plt.close(fig=self._figure2D)
+        else:
+            # Close both
+            plt.close(fig=self._figure2D)
+            plt.close(fig=self._figure3D)
+
     def openfig(self, which_dimension: str):
         """
         A way to re-open a closed figure.
+
         Useful for remedying accidental exits.
+
+        Parameter(s):
+        which_dimension: str
+            Which plot to open (2d or 3d)
         """
         # Credit: https://stackoverflow.com/questions/31729948/matplotlib-how-to-show-a-figure-that-has-been-closed  #noqa
         dim_string = which_dimension.lower()
@@ -379,6 +410,7 @@ class KMeans:
 
     # ::Private methods::
     def _validateParams(self):
+        """Helps consolidate edge-case checks."""
         # access and validate the data
         data = self._data
         K_NUM = self._segments
@@ -434,20 +466,6 @@ class KMeans:
 
         return True
 
-    def _closeplot(self):
-        # Close unused plot
-        # Intention: Get the number of dimensions of the data
-        # (Ex. [(0,0,0)]) has dimension 3 for the data.
-        data_dim = np.array(self._data).shape[-1]
-        # print(f"VALIDATE DATA: {data_dim}")
-        if data_dim == 2:
-            plt.close(fig=self._figure3D)
-        elif data_dim == 3:
-            plt.close(fig=self._figure2D)
-        else:
-            # Close both
-            plt.close(fig=self._figure2D)
-            plt.close(fig=self._figure3D)
 
     def _assignLabels(self, means: list, data: list):
         """
