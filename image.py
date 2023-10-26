@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class Image:
+class ImageHelper:
     """
     Purpose: A class to make typical OpenCV operations simpler for myself.
 
@@ -19,7 +19,7 @@ class Image:
         Pass the target image's path name to the constructor.
     Example:
         - path = '~/images/pic01.png'
-        - img = Image(path)
+        - img = ImageHelper(path)
         - img.display()  # view the object
 
     Display np.ndarray images:
@@ -669,3 +669,4 @@ class Image:
         # Cleanup
         cv.destroyAllWindows()
         print("Closed.")
+# ---
