@@ -9,8 +9,6 @@
 from collections.abc import Iterable
 from typing import ClassVar
 import copy
-import os
-
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -90,8 +88,15 @@ class KMeans:
     # =================
     # Initialization
     # =================
-    def __init__(self, data, *, segments=2, initial_means=None, threshold=0.5,
-                 maxIterations=100):
+    def __init__(
+            self,
+            data,
+            *,
+            segments=2,
+            initial_means=None,
+            threshold=0.5,
+            maxIterations=100):
+            
         self._data = data
         self._segments = segments
         self._threshold = threshold
@@ -101,10 +106,10 @@ class KMeans:
         self._validateParams()
 
         # Plotting (2D and 3D cases)
-        self._figure2D = plt.figure()
-        self._axes2D = self._figure2D.add_subplot()
-        self._figure3D = plt.figure()
-        self._axes3D = self._figure3D.add_subplot(projection='3d')
+        self.figure2D = plt.figure()
+        self.axes2D = self.figure2D.add_subplot()
+        self.figure3D = plt.figure()
+        self.axes3D = self.figure3D.add_subplot(projection='3d')
         # Close unused figure(s)
         self.closefig()
         # plt.ion()
@@ -189,8 +194,8 @@ class KMeans:
         THRESH = self.threshold
 
         if not display:
-            plt.close(self._figure2D)
-            plt.close(self._figure3D)
+            plt.close(self.figure2D)
+            plt.close(self.figure3D)
         # Check (preclude inf. loop)
         # If the length of the data is less than the target segment number,
         # getting the initial means will result in an infinite loop.
@@ -367,16 +372,16 @@ class KMeans:
         data_dim = np.array(self._data).shape[-1]
         # print(f"VALIDATE DATA: {data_dim}")
         if close_all:
-            plt.close(fig=self._figure2D)
-            plt.close(fig=self._figure3D)
+            plt.close(fig=self.figure2D)
+            plt.close(fig=self.figure3D)
         elif data_dim == 2:
-            plt.close(fig=self._figure3D)
+            plt.close(fig=self.figure3D)
         elif data_dim == 3:
-            plt.close(fig=self._figure2D)
+            plt.close(fig=self.figure2D)
         else:
             # Close both
-            plt.close(fig=self._figure2D)
-            plt.close(fig=self._figure3D)
+            plt.close(fig=self.figure2D)
+            plt.close(fig=self.figure3D)
 
     def openfig(self, which_dimension: str):
         """
@@ -394,13 +399,13 @@ class KMeans:
         if dim_string == '2d':
             blank = plt.figure()
             fm = blank.canvas.manager
-            fig = self._figure2D
+            fig = self.figure2D
             fm.canvas.figure = fig
             plt.show()
         elif dim_string == '3d':
             blank = plt.figure()
             fm = blank.canvas.manager
-            fig = self._figure3D
+            fig = self.figure3D
             fm.canvas.figure = fig
             fig.set_canvas(blank.canvas)
             plt.show()
@@ -604,8 +609,8 @@ class KMeans:
 
         # 2D case
         if dimensions == 2:
-            # plt.close(fig=self._figure3D)
-            ax = self._axes2D
+            # plt.close(fig=self.figure3D)
+            ax = self.axes2D
             ax.clear()
             ax.set(xlabel='x', ylabel='y',
                    title='k-Means Iteration {}\nk = {}'.format(iterations,
@@ -623,8 +628,8 @@ class KMeans:
 
         # 3D case
         elif dimensions == 3:
-            # plt.close(fig=self._figure2D)
-            ax = self._axes3D
+            # plt.close(fig=self.figure2D)
+            ax = self.axes3D
             ax.clear()
 
             # Plot setup
