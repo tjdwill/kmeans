@@ -257,8 +257,7 @@ class KMeans:
             while not means_found:
                 # index = np.random.randint(0, len(data))
                 means = np.array([
-                    data[
-                        np.random.randint(0, len(data))][:self.ndim]
+                    data[np.random.randint(0, len(data))][:self.ndim]
                         for _ in range(K_NUM)
                 ])
 
