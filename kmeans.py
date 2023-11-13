@@ -2,14 +2,16 @@
 # -*- coding: utf-8 -*-
 """
 @author: Terrance Williams
-@date: 26 October 2023
+@original_creation: June 2023
+@version: 1.2
+@revision_date: 12 November 2023
 @description: A class for k-means clustering
 """
+from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import MutableMapping
 from typing import ClassVar
 import copy
-import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -83,26 +85,33 @@ class KMeans:
     segments: int
     threshold: float
     maxIterations: int
-    initial_means: Iterable
+    initial_means: np.ndarray | MutableMapping[np.ndarray]
+    ndim: int
 
     # =================
     # Initialization
     # =================
     def __init__(
             self,
-            data,
+            data: np.ndarray | MutableMapping,
             *,
+            ndim=0,
             segments=2,
             initial_means=None,
             threshold=0.5,
-            maxIterations=100):
-            
+            maxIterations=100
+    ):
+
         self._data = data
+        self._initial_means = initial_means
         self._segments = segments
         self._threshold = threshold
         self._maxIterations = maxIterations
-        self._initial_means = initial_means
 
+        if ndim == 0:
+            self._ndim = min(len(x) for x in data)
+        else:
+            self._ndim = ndim
         self._validateParams()
 
         # Plotting (2D and 3D cases)
@@ -111,7 +120,7 @@ class KMeans:
         self.figure3D = plt.figure()
         self.axes3D = self.figure3D.add_subplot(projection='3d')
         # Close unused figure(s)
-        self.closefig()
+        self.close_fig()
         # plt.ion()
 
     # ============
@@ -132,6 +141,10 @@ class KMeans:
     def segments(self, value: int):
         if not isinstance(value, int):
             raise TypeError("Value must be an integer.")
+        if self._initial_means is not None:
+            raise ValueError(
+                'Cannot change \'k\' value when initial means are given.'
+            )
         old_val = self._segments
         try:
             self._segments = value
@@ -167,51 +180,64 @@ class KMeans:
         else:
             self._maxIterations = value
 
+
+    @property
+    def ndim(self):
+        """Number of dimensions of the data to be clustered."""
+        return self._ndim
+
+    @ndim.setter
+    def ndim(self, value: int):
+        if not isinstance(value, int):
+            raise TypeError("Value must be an integer.")
+        elif value < 1:
+            raise ValueError("Value must be at least 1.")
+        else:
+            old_ndim = self.ndim
+            self._ndim = value
+            try:
+                self._validateParams()
+            except ValueError:
+                self._ndim = old_ndim
+                raise
+
+
     # ===============
     # Class Methods
     # ===============
 
     # ::Public methods::
-    def cluster(self,
-                display: bool = True) -> list:
+    def cluster(
+            self,
+            display: bool = False) -> tuple:
         """
         The main event; performs the data clustering operation.
 
         Parameters
         ----------
         display : bool, optional
-            Whether to live-plot the data or not. The default is True.
+            Whether to live-plot the data or not. The default is False.
 
         Returns
         -------
-        list
+        tuple
             [Clusters, Centroids, IterationCount]
 
         """
         # Initialize Variables
-        data = self.data
-        K_NUM = self.segments
-        THRESH = self.threshold
+        this_func = 'KMeans.cluster'
+        data = self._data
+        K_NUM = self._segments
+        THRESH = self._threshold
+        ndim = self.ndim
 
         if not display:
-            plt.close(self.figure2D)
-            plt.close(self.figure3D)
-        # Check (preclude inf. loop)
-        # If the length of the data is less than the target segment number,
-        # getting the initial means will result in an infinite loop.
-        # The program would never be able to get
-        # the target number of unique points.
-        if len(data) < K_NUM:
-            raise ValueError("Number of segments exceeds data points."
-                             " Ensure data is in a 1-D iterable.\n"
-                             "Length Data: {}, Segments: {}".format(len(data),
-                                                                    K_NUM)
-                             )
-        # print(f'Data: {data}\nSegments:{K_NUM}')
+            self.close_fig(close_all=True)
+        elif ndim != 2 and ndim != 3:
+            display = False
 
         # Declare variables
-        clusters, centroids = None, None
-        means = None
+        clusters, centroids, means = None, None, None
 
         # ===================
         # Set initial means
@@ -222,45 +248,55 @@ class KMeans:
             means = self._initial_means
         else:
             # get k random points to serve as initial means
-            print("Generating initial means...")
+            print(f"<{this_func}>: Generating initial means...")
             means_found = False
 
             # Loop until the mean points are found. It shouldn't loop at
             # all since repeat points are unlikely, but with randomization,
-            # there's always a chance, so I placed the check for uniqueness.
+            # there's always a chance, so I placed a check for uniqueness.
             while not means_found:
-                means = np.array([data[np.random.randint(0, len(data))]
-                                  for _ in range(K_NUM)])
+                # index = np.random.randint(0, len(data))
+                means = np.array([
+                    data[
+                        np.random.randint(0, len(data))][:self.ndim]
+                        for _ in range(K_NUM)
+                ])
+
                 # Sanity Check
                 length = len(means)
                 assert length == K_NUM
-                # Ensure no duplicate point
+                # Ensure no duplicate point; don't care about row order in
+                # means array, so no need to pass `return_index=True` and
+                # recover original means sort order.
                 check = np.unique(means, axis=0)
+                '''print(f'{this_func}: Means Generated:\n{means}')
+                print(check)
+                print('')'''
                 if len(check) == length:
                     means_found = True
-                    print(means)
+                    # print(means)
         # print(f'Means Check:\n{means}')
         # Begin loop; Currently, the program will loop until each calculated
         # cluster centroid is within THRESH distance from the mean found in the
         # previous iteration, or until the iteration limit is reached,
         # whichever happens first.
-        # I may change this calculation to use data variance in the future
-        # if that's more "official."
+        # I may change this calculation to use statistical variance in the future
+        # if that's more "legitimate".
         thresh_reached = False
         iterations = 0
-        print("Cluster Iteration Count:")
+        print(f"<{this_func}>: Cluster Iteration Count:")
 
         while not thresh_reached:
             # Assign clusters
             iterations += 1
             if iterations >= self._maxIterations:
-                print("Max iterations reached. Returning output.")
+                print(f"<{this_func}>: Max iterations reached. Returning output.")
                 thresh_reached = True
             print(iterations)
 
             clusters = self._assignLabels(means, data)
             # print(f'Clusters: {clusters}')
-            centroids = self._findCentroid(clusters)
+            centroids = self._findCentroids(clusters)
             # print(f'Centroids: {centroids}')
             # Live plot the data
             if display:
@@ -276,7 +312,7 @@ class KMeans:
             else:
                 thresh_reached = True
         if iterations < self._maxIterations:
-            print("Successful cluster operation.\n")
+            print(f"{this_func}: Successful cluster operation.\n")
         return [clusters, centroids, iterations]
 
     @staticmethod
@@ -358,7 +394,7 @@ class KMeans:
             seg_img = seg_img.reshape(image.shape)
         return seg_img
 
-    def closefig(self, close_all=False):
+    def close_fig(self, close_all=False):
         """
         A method to close the generated figures.
 
@@ -369,9 +405,10 @@ class KMeans:
         # Close unused plot
         # Intention: Get the number of dimensions of the data
         # (Ex. [(0,0,0)]) has dimension 3 for the data.
-        data_dim = np.array(self._data).shape[-1]
+        data_dim = self.ndim
         # print(f"VALIDATE DATA: {data_dim}")
         if close_all:
+            # Close both at user request
             plt.close(fig=self.figure2D)
             plt.close(fig=self.figure3D)
         elif data_dim == 2:
@@ -379,11 +416,11 @@ class KMeans:
         elif data_dim == 3:
             plt.close(fig=self.figure2D)
         else:
-            # Close both
+            # Close both for non-displayable dimensions
             plt.close(fig=self.figure2D)
             plt.close(fig=self.figure3D)
 
-    def openfig(self, which_dimension: str):
+    def open_fig(self, which_dimension: str):
         """
         A way to re-open a closed figure.
 
@@ -393,7 +430,8 @@ class KMeans:
         which_dimension: str
             Which plot to open (2d or 3d)
         """
-        # Credit: https://stackoverflow.com/questions/31729948/matplotlib-how-to-show-a-figure-that-has-been-closed  #noqa
+        # Credit:
+        # https://stackoverflow.com/questions/31729948/matplotlib-how-to-show-a-figure-that-has-been-closed
         dim_string = which_dimension.lower()
 
         if dim_string == '2d':
@@ -415,27 +453,39 @@ class KMeans:
 
     # ::Private methods::
     def _validateParams(self):
-        """Helps consolidate edge-case checks."""
+        """
+        Validate configuration for KMeans object.
+        """
         # access and validate the data
         data = self._data
         K_NUM = self._segments
         THRESH = self._threshold
+        ndim = self.ndim
         MAX_ITERATIONS = self._maxIterations
         initial_means = self._initial_means
         accepted_types = [list, tuple, np.ndarray]
 
-        if np.array(data).ndim != 2:
-            raise ValueError("Data *must* be w/in a 1-D container.\nEx. "
-                             "[(0, 0), (2,3)]")
+        # Check if data is stored properly (flat and in a container)
+
+        # Ensure data has suitable dimensionality
+        if ndim <= 0:
+            raise ValueError("Data must have at least one dimension.")
+        if any([len(arr) < ndim for arr in data]):
+            raise ValueError(
+                f"Each data point must have at least {ndim} components."
+            )
+
         if K_NUM < 1:
             raise ValueError("Number of segments must be at least one.")
         elif K_NUM > len(data):
-            raise ValueError("Number of segments cannot exceed "
-                             "number of data points.\n"
-                             "Length Data: {}, Segments: {}".format(len(data),
-                                                                    K_NUM))
-        if THRESH < 0 or THRESH > KMeans._THRESH_MAX:
-            raise ValueError("Cannot have a negative threshold value.")
+            raise ValueError(
+                "Number of segments cannot exceed "
+                "number of data points.\n"
+                "Length Data: {}, Segments: {}".format(len(data), K_NUM)
+            )
+
+        if not 0 < THRESH < KMeans._THRESH_MAX:
+            raise ValueError("Threshold Value must be between 0 and 1.")
         if MAX_ITERATIONS <= 0:
             raise ValueError("Must have at least one iteration.")
 
@@ -443,45 +493,89 @@ class KMeans:
             if type(initial_means) not in accepted_types:
                 raise TypeError('Means container must be one of the following:'
                                 f'\n{accepted_types}')
+            else:
+                temp_means = [arr[0:ndim] for arr in initial_means]
+                temp_data = [arr[0:ndim] for arr in data]
+                initial_means = np.array(temp_means, dtype=np.float64)
+                data = np.array(temp_data)
+                # print(initial_means)
             # Check element types and values.
-            if not all([type(arr) in accepted_types for arr in initial_means]):
-                raise TypeError('Elements must be one of the following types:'
+            if any([type(arr) not in accepted_types for arr in initial_means]):
+                raise TypeError('All means points must be one of the following input types:'
                                 f'\n{accepted_types}')
-            if not all(any(np.equal(data, element).all(1))
-                       for element in initial_means):
+            """
+            Nested logic comparison:
+                - check = np.equal(data[:, 0:ndim], entry)
+                    - checks for element-wise equality between a given entry
+                    in `initial_means` and each row in `data` up to the `ndim`th element.
+                    Output array is of shape (len(data), ndim).
+
+                - check2 = check.all(axis=1)
+                    - Tests if all elements in a row of `check` are True for
+                    each row in `check`
+                    - "For each row in `check`, test if all column entries
+                    are True."
+                    - Passing in axis=0 would check if all elements among
+                    columns were True for each column in `check`
+                    - Left with a 1-D T/F array (i.e., flat) of length len(data).
+
+                - check3 = (any(np.equal(data, entry).all(1) for entry in initial_means[:, 0:ndim)
+                    - Returns a generator where each element is a single T/F value.
+                    - Each element is communicating if there are any entries in `data` that are completely equivalent
+                    with an entry in initial_means.
+                    - Outputs generator (length = K_NUM)
+
+                - all(check3)
+                    - Is every entry in initial_means represented in `data`?
+                    - Outputs a single T/F.
+            """
+            if not all(
+                    any(
+                        np.equal(data[:, 0:ndim], entry).all(1)
+                    )
+                    for entry in initial_means[:, 0:ndim]
+            ):
                 raise ValueError("Provided means must be among the data.")
+
             # Remove duplicates and check remaining length
             # Turns out np.unique changes the order of the data.
             # https://stackoverflow.com/questions/15637336/numpy-unique-with-order-preserved
+
             # print(f'Before: {initial_means}')
-            initial_means, ndx = np.unique(initial_means, axis=1,
-                                           return_index=True)
-            # print(ndx)
-            initial_means = initial_means[:, ndx]
-            # print(f'After {initial_means}')
+
+            # Check for unique rows in means array; no duplicate means
+            # Use slices of initial_means because we are only concerned about uniqueness among the dimensions we are
+            # clustering
+            filtered_initial_means, ndx = np.unique(
+                np.copy(initial_means[:, :ndim]),  # use copy so original array order remains the same.
+                axis=0,
+                return_index=True
+            )
             # Check length
             try:
-                length = len(initial_means)
+                length = len(filtered_initial_means)
                 assert length == K_NUM
             except AssertionError:
-                print("\nNumber of mean points must == number of segments.\n")
+                print("\nNumber of unique mean points must == number of segments.\n")
                 raise
-            self._initial_means = initial_means
-        # print("KMeans: All parameters valid.")
+            # print(ndx)
 
+            # If the function gets here, there were no duplicate means among the slices.
+        # Retain conversion to Numpy array if made
+        self._data = data
+        self._initial_means = initial_means
         return True
 
-
-    def _assignLabels(self, means: list, data: list):
+    def _assignLabels(self, means: np.ndarray, data: np.ndarray):
         """
         Separate the data into clusters.
 
         Parameters
         ----------
-        means : list
+        means : np.ndarray
             The current list of cluster means.
             Randomly chosen for first iteration.
-        data : list
+        data : np.ndarray
             The data to be organized.
 
         Returns
@@ -494,31 +588,31 @@ class KMeans:
         K_NUM = self._segments
         clusters = {k: [] for k in range(K_NUM)}
         index = None
+        ndim = self.ndim
 
         for point in data:
             # Initialize ridiculously high number to begin comparisons.
-            old_dist = 1E1000
-            for i in range(len(means)):
-                new_dist = self._calcDistance(point, means[i])
+            curr_dist = 1E1000
+            for i in range(K_NUM):
+                new_dist = self._calcDistance(point[0:ndim], means[i][0:ndim])
 
-                if new_dist < old_dist:
+                if new_dist < curr_dist:
                     # Track index of the closest mean point
-                    (old_dist, index) = (new_dist, i)
+                    (curr_dist, index) = (new_dist, i)
             else:
-                # Add point to label bin
+                # Add entire point to label bin (all dimensions; not just ndim)
                 clusters[index].append(point)
-
         return clusters
 
     @staticmethod
-    def _calcDistance(point1: Iterable, point2: Iterable = None):
+    def _calcDistance(point1: np.ndarray, point2: np.ndarray = None):
         """
         Calculate Euclidean distance between two points.
 
         Parameters
         ----------
-        point1 : Iterable
-        point2 : Iterable, optional
+        point1 : np.ndarray
+        point2 : np.ndarray, optional
             Defaults to the zero vector.
 
         Returns
@@ -527,44 +621,38 @@ class KMeans:
 
         """
         # check input
-        if not isinstance(point1, Iterable):
-            point1 = [point1]
+        this_func = 'KMeans._calcDistance'
         if point2 is None:
             point2 = np.zeros(len(point1))
-        else:
-            if not isinstance(point2, Iterable):
-                point2 = [point2]
 
         try:
             assert len(point1) == len(point2)
         except AssertionError:
-            print('\nBoth points must have same dimension.')
+            print(
+                (f'\n<{this_func}>: Both points must have same dimension.\n'
+                 f'Point 1: {point1}\nPoint 2: {point2}')
+            )
             raise
 
         # Cast as numpy arrays to prevent overflow
-        point1 = np.array(point1, dtype=np.float64)
-        point2 = np.array(point2, dtype=np.float64)
+        point1 = point1.astype(np.float64)
+        point2 = point2.astype(np.float64)
 
         # Perform Calculation
-        sqr_dist = (point1-point2)**2
-        sqr_dist = sqr_dist.sum()
-        distance = np.sqrt(sqr_dist)
+        return np.linalg.norm(point1 - point2)
 
-        return distance
-
-    @staticmethod
-    def _findCentroid(clusters: Iterable):
+    def _findCentroids(self, clusters: dict):
         """
         Calculate the centroid for each cluster in the bin.
         Parameters
         ----------
-        clusters : Iterable (dictionary)
+        clusters: dict
             The clustered data.
 
         Returns
         -------
         centroids : list
-            List of the centroids of each cluster
+            - List of the centroids of each cluster
 
         """
         # Calculate the centroid for each cluster in the bin.
@@ -574,16 +662,16 @@ class KMeans:
         # change the design in the future.
 
         centroids = []
-        for i in range(len(clusters)):
-            label_bin = np.array(clusters[i], dtype=np.float64)
-            rows = label_bin.shape[0]
+        for cluster in clusters.values():
+            temp = [arr[:self.ndim] for arr in cluster]
+            cluster = np.array(temp, dtype=np.float64)
+            rows = cluster.shape[0]
             # Calc centroid
-            centroid = label_bin.sum(axis=0)/rows
+            centroid = cluster[:, 0:self.ndim].sum(axis=0)/rows
             centroids.append(centroid)
         return centroids
 
-    def _display(self, data: Iterable):
-        ...
+    def _display(self, data: MutableMapping):
         # Assume we are passed the clusters, centroids, and iterations count
         # TO-DO: Figure out how to get the centroid to show in a 3D cluster.
 
@@ -599,24 +687,31 @@ class KMeans:
 
         colors = KMeans.colors
         WRAP_FACTOR = KMeans.WRAP_FACTOR
-
+        PAUSE_TIME = 0.05
         # Get data
         clusters, centroids, iterations = data
         # print(clusters[0][0])
-        dimensions = len(clusters[0][0])
+        dimensions = self.ndim
+        k_val = self._segments
         # print(f'Data Dimensions: {dimensions}')
-        labels = ['Cluster {}'.format(i) for i in range(len(clusters))]
+        labels = ['Cluster {}'.format(i) for i in range(k_val)]
 
         # 2D case
         if dimensions == 2:
-            # plt.close(fig=self.figure3D)
             ax = self.axes2D
             ax.clear()
-            ax.set(xlabel='x', ylabel='y',
-                   title='k-Means Iteration {}\nk = {}'.format(iterations,
-                                                               self._segments))
-            for i in range(len(clusters)):
-                x, y = zip(*clusters[i])
+            ax.set(
+                xlabel='x',
+                ylabel='y',
+                title='k-Means Iteration {}\nk = {}'.format(
+                    iterations, k_val
+                )
+            )
+            for i in range(k_val):
+                temp = [arr[:dimensions] for arr in clusters[i]]
+                cluster = np.array(temp)
+                x = cluster[:, 0]
+                y = cluster[:, 1]
                 cenX, cenY = centroids[i]
                 ax.scatter(x, y, s=10, color=colors[i % WRAP_FACTOR],
                            label=labels[i])
@@ -624,7 +719,7 @@ class KMeans:
                            marker='o', s=50, zorder=3, edgecolor='k')
             # ax.legend()
             # ax.grid(visible=True, axis='both')
-            plt.pause(0.05)
+            plt.pause(PAUSE_TIME)
 
         # 3D case
         elif dimensions == 3:
@@ -633,17 +728,25 @@ class KMeans:
             ax.clear()
 
             # Plot setup
-            ax.set(xlabel='R', ylabel='G', zlabel='B',
-                   title='k-Means Iteration {}\nk = {}'.format(iterations,
-                                                               self._segments))
+            ax.set(
+                xlabel='X',
+                ylabel='Y',
+                zlabel='Z',
+                title='k-Means Iteration {}\nk = {}'.format(
+                    iterations,
+                    k_val
+                )
+            )
             # Get R, G, B points and plot them for each cluster
             # Matplotlib automatically switches color for each call to scatter.
-            for i in range(len(clusters)):
-                R, G, B = zip(*clusters[i])
+            for i in range(k_val):
+                temp = [arr[:dimensions] for arr in clusters[i]]
+                cluster = np.transpose(np.array(temp))
+                x, y, z = cluster[0:dimensions]
                 # cenR, cenG, cenB = centroids[i]
-                ax.scatter(R, G, B, s=10, color=colors[i % WRAP_FACTOR])
+                ax.scatter(x, y, z, s=10, color=colors[i % WRAP_FACTOR])
                 # ax.scatter(cenR, cenG, cenB ,marker='*', s=(72*2), zorder=5)
-            plt.pause(0.05)
+            plt.pause(PAUSE_TIME)
         # plt.show()
         else:
             # print("Data is neither 2D nor 3D. Returning.")
