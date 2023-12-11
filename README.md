@@ -1,5 +1,9 @@
-# imgClass
-A repository documenting the implementation of classes for basic image operations. 
+# K Means Clustering
+A repository documenting the implementation of k-Means clustering in Python.
+
+This class is now able to cluster non-uniform data, allowing one to keep track of additional info without disorganization.
+
+- _Non-uniform data_: Data that differ in dimension. The program clusters based on the smallest dimension.
 
 
 Example: k-Means implementation
