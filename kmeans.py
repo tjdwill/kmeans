@@ -3,8 +3,8 @@
 """
 @author: Terrance Williams
 @original_creation: June 2023
-@version: 1.2
-@revision_date: 12 November 2023
+@version: 1.2.1
+@revision_date: 22 March 2024
 @description: A class for k-means clustering
 """
 from __future__ import annotations
@@ -209,7 +209,8 @@ class KMeans:
     # ::Public methods::
     def cluster(
             self,
-            display: bool = False) -> tuple:
+            display: bool = False
+    ) -> tuple:
         """
         The main event; performs the data clustering operation.
 
@@ -257,7 +258,8 @@ class KMeans:
             while not means_found:
                 # index = np.random.randint(0, len(data))
                 means = np.array([
-                    data[np.random.randint(0, len(data))][:self.ndim]
+                    data[
+                        np.random.randint(0, len(data))][:ndim]
                         for _ in range(K_NUM)
                 ])
 
@@ -310,9 +312,9 @@ class KMeans:
                     break
             else:
                 thresh_reached = True
-        if iterations < self._maxIterations:
+        else:
             print(f"{this_func}: Successful cluster operation.\n")
-        return [clusters, centroids, iterations]
+        return [clusters, centroids, {"iterations": iterations, "ndim": ndim}]
 
     @staticmethod
     def segment_img(image: np.ndarray, clusters: dict, centroids: list,
@@ -493,8 +495,8 @@ class KMeans:
                 raise TypeError('Means container must be one of the following:'
                                 f'\n{accepted_types}')
             else:
-                temp_means = [arr[0:ndim] for arr in initial_means]
-                temp_data = [arr[0:ndim] for arr in data]
+                temp_means = [arr[0:self.ndim] for arr in initial_means]
+                temp_data = [arr for arr in data]
                 initial_means = np.array(temp_means, dtype=np.float64)
                 data = np.array(temp_data)
                 # print(initial_means)
