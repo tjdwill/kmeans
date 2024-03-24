@@ -4,7 +4,7 @@
 @author: Terrance Williams
 @original_creation: June 2023
 @version: 1.2.1
-@revision_date: 22 March 2024
+@revision_date: 23 March 2024
 @description: A class for k-means clustering
 """
 from __future__ import annotations
