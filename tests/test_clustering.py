@@ -7,7 +7,7 @@
 
 import numpy as np
 from kmeans import cluster
-from kmeans.clustering import _generate_means as gm
+from kmeans.base_funcs import _generate_means as gm
 
 SEED=27
 np.random.seed(SEED)

@@ -5,7 +5,7 @@
     A test for generating initial means.
 """
 import numpy as np
-from kmeans.clustering import _generate_means as gm
+from kmeans.base_funcs import _generate_means as gm
 
 
 NDIM = 7

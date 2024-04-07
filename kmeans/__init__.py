@@ -1,3 +1,3 @@
 from kmeans.clustering import cluster
 
-__all__ = [cluster]
+__all__ = ["cluster"]

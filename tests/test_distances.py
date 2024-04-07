@@ -6,7 +6,7 @@
     Tests both value and, implicitly, dimension specification.
 """
 import numpy as np
-from kmeans.clustering import _eucl_dist
+from kmeans.base_funcs import _eucl_dist
 
 
 NDIM = 3

@@ -4,10 +4,10 @@
     Test the cluster assignment functions
 """
 import numpy as np
-from kmeans.clustering import _assign_cluster as ac
-from kmeans.clustering import _assign_clusters as acs
-from kmeans.clustering import _generate_means as gm
-from kmeans.clustering import _eucl_dist as eucl
+from kmeans.base_funcs import _assign_cluster as ac
+from kmeans.base_funcs import _assign_clusters as acs
+from kmeans.base_funcs import _generate_means as gm
+from kmeans.base_funcs import _eucl_dist as eucl
 
 # Now I need to come up with test data...
 SEED = 27
