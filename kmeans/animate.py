@@ -28,13 +28,13 @@ colors: list = [color for color in colors.TABLEAU_COLORS.values()]
 WRAP_FACTOR: int = len(colors)
 SZ = 10
 CENTROID_SZ = 2*SZ
-def draw(clusters:Clusters, centroids: NDArray, ax_obj: mpl.axes.Axes, ndim: int) -> None:
+def _draw(clusters:Clusters, centroids: NDArray, ax_obj: mpl.axes.Axes, ndim: int) -> None:
     """Draws the clusters onto the figure
     
     Args:
         clusters: The segmented data
         centroids: The centers of the clusters
-        ax: The axes object (from the figure)
+        ax_obj: The axes object (from the figure)
         ndim: The number of dimensions
 
     Returns:
@@ -160,7 +160,7 @@ def view_clustering(
     for _ in range(max_iterations):
         clusters = _assign_clusters(data, old_centroids, dist_funcs[dist_func])
         centroids = _new_centroids(clusters, ndim)
-        draw(clusters, centroids, ax, ndim)
+        _draw(clusters, centroids, ax, ndim)
         changes = np.linalg.norm(centroids - old_centroids, axis=1)  # Distance along each vector
         if any(np.where(changes > threshold, True, False)):
             old_centroids = centroids
