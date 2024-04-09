@@ -95,7 +95,7 @@ def view_clustering(
         max_iterations: int = 100,
         dist_func: Callable = "euclidean"
 ) -> tuple[Clusters, NDArray, mpl.figure.Figure]:
-    """Perform k-means clustering
+    """Perform and display k-means clustering
     
     Args:
         data: The input data
