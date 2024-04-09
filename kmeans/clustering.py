@@ -8,7 +8,7 @@
 from typing import Union, List, Tuple, Callable
 import numpy as np
 from numpy.typing import NDArray
-from kmeans.base_funcs import _assign_clusters, _validate, _new_centroids, dist_funcs 
+from kmeans.base_funcs import _assign_clusters, _validate, _new_centroids, dist_funcs, SMALLEST_THRESH
 
 
 Clusterable = Union[List[NDArray], Tuple[NDArray], NDArray]
@@ -24,7 +24,7 @@ def cluster(
         k: int,*,
         initial_means: Union[List[NDArray], Tuple[NDArray], NDArray] = None,
         ndim: int = None,
-        threshold: float = 0.5,
+        threshold: float = SMALLEST_THRESH, 
         max_iterations: int = 100,
         dist_func: Callable = "euclidean"
 ) -> tuple[Clusters, NDArray]:
@@ -53,14 +53,14 @@ def cluster(
         ndim: Dimension limit for clustering; 
             Defaults to None -> selects the ndim based on data dimensionality
         threshold: How much can a given cluster centroid 
-            change between iterations. Default: 0.5
+            change between iterations. Default: 4.440892098500626e-15
         max_iterations: The counter timeout 
             Default: 100
         dist_func: Distance calculation method
             Default: 'euclidean'
 
     Returns:
-        tuple[Clusterable, NDArray, int]: clustered data, cluster centroids
+        tuple[Clusterable, NDArray]: clustered data, cluster centroids
 
     Raises:
         MaxIterationError: Raise this exception if the clustering doesn't

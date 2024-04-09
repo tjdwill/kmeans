@@ -7,7 +7,7 @@
 
 import numpy as np
 from kmeans import cluster
-from kmeans.base_funcs import _generate_means as gm
+from kmeans.base_funcs import SMALLEST_THRESH, _generate_means as gm
 
 SEED=27
 np.random.seed(SEED)
@@ -17,7 +17,7 @@ NDIM = 3
 K = 4
 means = gm(data, K, NDIM)
 print("Means:\n", means)
-clusters, centroids = cluster(data, k=K, ndim=NDIM, threshold=0.05, initial_means=means)
+clusters, centroids = cluster(data, k=K, ndim=NDIM, threshold=SMALLEST_THRESH, initial_means=means)
 
 print("Centroids:\n", centroids)
 for key in clusters:
