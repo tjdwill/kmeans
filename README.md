@@ -25,7 +25,9 @@ Other examples of use could be for maintaining data association in object detect
 we may want to cluster the data solely on bounding box information while also maintaining the confidence intervals for each detection for further processing.
 
 
-Example: k-Means implementation
+## k-means Animation
+
+Using the `view_clustering` function
 
 2-D Case (1x speed)
 
@@ -36,6 +38,7 @@ Example: k-Means implementation
 [kmeans3D_animate.webm](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/22394f93-a2f3-499f-a54c-286723dd0a70)
 
 ## Image Segmentation
+
 Perform image segmentation based on color groups specified by the user.
 
 Two options: 
