@@ -41,9 +41,11 @@ Using the `view_clustering` function
 
 Perform image segmentation based on color groups specified by the user.
 
-Two options: 
+Two options:
+
 1. Averaged Colors
-<img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_groups4.jpg" />  
+<img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_groups4.jpg" /> 
+
 2. Random Colors
 <img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_rand_groups4.jpg" />
 
