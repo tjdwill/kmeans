@@ -144,7 +144,6 @@ def view_clustering(
     )
 
     clusters, old_centroids = {}, initial_means
-    print(ndim)
     # 2D or 3D plots?
     if ndim==2:
         fig, ax = plt.subplots()
