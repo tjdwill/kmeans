@@ -43,7 +43,7 @@ Perform image segmentation based on color groups specified by the user.
 
 Two options:
 
-1. Averaged Colors
+### Averaged Colors
 
 k=4
 
@@ -53,7 +53,9 @@ k=10
 
 <img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_groups10.jpg" />
 
-2. Random Colors
+### Random Colors
+
+k=4
 
 <img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_rand_groups04.jpg" />
 
