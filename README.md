@@ -44,10 +44,18 @@ Perform image segmentation based on color groups specified by the user.
 Two options:
 
 1. Averaged Colors
-<img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_groups4.jpg" /> 
+
+k=4
+
+<img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_groups04.jpg" />
+
+k=10
+
+<img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_groups10.jpg" />
 
 2. Random Colors
-<img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_rand_groups4.jpg" />
+
+<img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_rand_groups04.jpg" />
 
 ## Developed With
 * Python (3.12.1)
