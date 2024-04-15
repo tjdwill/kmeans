@@ -63,8 +63,8 @@ def _assign_clusters(data: NDArray, centroids: NDArray) -> Clusters:
     Step 6: Now, we can find the nonzero elements of this structure and proceed
         to find the label values for each data element. 
     '''
-    broadcasted = np.min(norms, axis=1)[:, np.newaxis]
-    nz = np.nonzero(np.equal(norms, broadcasted))
+    broadcastable = np.min(norms, axis=1)[:, np.newaxis]
+    nz = np.nonzero(np.equal(norms, broadcastable))
     _, idxs = np.unique(nz, return_index=True)
     y = nz[0][idxs]
     x = nz[1][idxs]
