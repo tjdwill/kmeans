@@ -38,9 +38,9 @@ try:
 except ValueError:
     pass
 
-#-----------------------threshold check
+#-----------------------tolerance check
 try:
-    val(valid_data, k=K, threshold=SMALLEST_THRESH/2)
+    val(valid_data, k=K, tolerance=SMALLEST_THRESH/2)
 except ValueError:
     pass
 

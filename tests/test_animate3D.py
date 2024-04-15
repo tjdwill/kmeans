@@ -15,4 +15,4 @@ K = 4
 # Each data point has five entries to show the `ndim` parameter works
 data = np.random.random((20000, 5))
 
-clusters, centroids, fig = view_clustering(data, k=K, ndim=NDIM, threshold=0.001, max_iterations=200)
+clusters, centroids, fig = view_clustering(data, k=K, ndim=NDIM, tolerance=0.001, max_iterations=200)
