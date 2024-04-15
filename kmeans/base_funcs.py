@@ -27,7 +27,6 @@ def time_func(func: Callable):
     return wrapper
 
 
-# TODO: WIP
 #@time_func 
 def _assign_clusters(data: NDArray, centroids: NDArray) -> Clusters:
     """Assigns each data element to a cluster
