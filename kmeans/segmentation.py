@@ -41,7 +41,7 @@ def segment_img(img: NDArray, groups: int, random_colors: bool = False) -> NDArr
     img_w_idxs = append_coords(img)
     elem_dim = img_w_idxs.shape[-1]
     assert elem_dim == 5  #(R, G, B, y, x)
-    color_groups, group_colors, *extra = cluster(img_w_idxs.reshape(-1, elem_dim), k=groups, ndim=3, threshold=0.01)
+    color_groups, group_colors, *extra = cluster(img_w_idxs.reshape(-1, elem_dim), k=groups, ndim=3, tolerance=0.01)
 
     # The idea here is to use advanced indexing to change each group's color at once.
     '''

@@ -140,7 +140,7 @@ def _validate(
         k: int,*,
         initial_means: NDArray = None,
         ndim: int = None,
-        threshold: float = 0.5,
+        tolerance: float = 0.5,
         max_iterations: int = 100,
 ) -> tuple[Clusterable, NDArray, int]:
     """Perform validation checks on cluster arguments
@@ -150,7 +150,7 @@ def _validate(
         k: Amount of clusters
         initial_means: The initial cluster centroids
         ndim: Dimension limit for clustering
-        threshold: How much can a given cluster centroid 
+        tolerance: How much can a given cluster centroid 
             move between iterations
         max_iterations: The counter timeout
 
@@ -163,9 +163,9 @@ def _validate(
     if k < 1 or k > len(data):
         raise ValueError("k must be positive and can't exceed number of data points.")
     
-    # Check threshold
-    if threshold < SMALLEST_THRESH:
-        raise ValueError("Threshold too small.")
+    # Check tolerance
+    if tolerance < SMALLEST_THRESH:
+        raise ValueError("Tolerance too small.")
     
     # Check max_iterations
     if not isinstance(max_iterations, int):

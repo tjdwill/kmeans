@@ -14,7 +14,7 @@ from kmeans.base_funcs import _assign_clusters, _validate, _new_centroids, SMALL
 Clusterable = NDArray
 Clusters = dict[int: Clusterable]
 class MaxIterationError(Exception):
-    """An exception to be raised when the maximum iteration threshold is exceeded."""
+    """An exception to be raised when the maximum iteration tolerance is exceeded."""
     pass
 
 
@@ -23,7 +23,7 @@ def cluster(
         k: int,*,
         initial_means: Union[List[NDArray], Tuple[NDArray], NDArray] = None,
         ndim: int = None,
-        threshold: float = SMALLEST_THRESH, 
+        tolerance: float = SMALLEST_THRESH, 
         max_iterations: int = 250,
 ) -> tuple[Clusters, NDArray]:
     """Perform k-means clustering
@@ -50,7 +50,7 @@ def cluster(
             with uniform probability
         ndim: Dimension limit for clustering; 
             Defaults to None -> selects the ndim based on data dimensionality
-        threshold: How much can a given cluster centroid 
+        tolerance: How much can a given cluster centroid 
             change between iterations. Default: 4.440892098500626e-15
         max_iterations: The counter timeout 
             Default: 250
@@ -67,7 +67,7 @@ def cluster(
         k, 
         initial_means=initial_means, 
         ndim=ndim,
-        threshold=threshold, 
+        tolerance=tolerance, 
         max_iterations=max_iterations
     )
     clusters, old_centroids = {}, initial_means
@@ -76,7 +76,7 @@ def cluster(
         clusters = _assign_clusters(data, old_centroids)
         centroids = _new_centroids(clusters, ndim)
         changes = np.linalg.norm(centroids - old_centroids, axis=1)  # Distance along each vector
-        if any(np.where(changes > threshold, True, False)):
+        if any(np.where(changes > tolerance, True, False)):
             old_centroids = centroids
         else:
             return clusters, centroids
