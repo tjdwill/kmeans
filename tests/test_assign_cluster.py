@@ -4,10 +4,8 @@
     Test the cluster assignment functions
 """
 import numpy as np
-from kmeans.base_funcs import _assign_cluster as ac
 from kmeans.base_funcs import _assign_clusters as acs
 from kmeans.base_funcs import _generate_means as gm
-from kmeans.base_funcs import _eucl_dist as eucl
 
 # Now I need to come up with test data...
 SEED = 27
@@ -33,10 +31,10 @@ array([[0.06156535],
 
 tst_data[0]: array([0.42572141])  # Cluster 4
 """
-assert ac(tst_data[0], means, dist_func=eucl, ndim=NDIM, k=K) == 4
+# assert acs(tst_data, means)[0] == 4
 
-
-clusters = acs(tst_data, means, eucl)
+clusters = acs(tst_data, means)
+assert tst_data[0] in clusters[4] 
 print("Cluster Num: Number of Entries")
 for key in clusters:
     print(key, len(clusters[key]), sep=": ")

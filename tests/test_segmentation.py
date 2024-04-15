@@ -17,8 +17,8 @@ seg_img2 = segment_img(img, groups=num_groups, random_colors=True)
 out1 = Image.fromarray(np.concatenate((img, seg_img), axis=1))
 out2 = Image.fromarray(np.concatenate((img, seg_img2), axis=1))
 
-outfile1 = outdir / f"seg_groups{num_groups}.jpg"
-outfile2 = outdir / f"seg_rand_groups{num_groups}.jpg"
+outfile1 = outdir / f"seg_groups{num_groups:02d}.jpg"
+outfile2 = outdir / f"seg_rand_groups{num_groups:02d}.jpg"
 
 out1.save(outfile1, "JPEG")
 out2.save(outfile2, "JPEG")

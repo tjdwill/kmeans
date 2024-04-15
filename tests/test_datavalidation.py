@@ -84,17 +84,6 @@ try:
 except ValueError:
     pass
 
-# Check if all data points satisfy ndim parameter
-low_dim = 1
-high_dim = 3
-## Some data points have only one dimension in the following list
-## Pass ndim = 3 (or any # > 1) for the validation to trigger
-invalid_data = [np.random.randint(0, 3, size=(np.random.randint(low_dim, high_dim+1)))
-                for _ in range(LEN)]
-try:
-    val(invalid_data, k=K, ndim=3)
-except ValueError:
-    pass
 
 #--------------------------------------initial means check
 valid_means = np.array([valid_data[i] for i in range(K)])
