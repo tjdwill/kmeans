@@ -29,13 +29,13 @@ we may want to cluster the data solely on bounding box information while also ma
 
 Using the `view_clustering` function
 
-### 2-D Case (1x speed)
+### 2-D Case (Smallest Threshold Possible)
 
-[kmeans2D_animate.webm](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/baf6e02a-4c28-4754-918e-60766a596911)
+[kmeans2D_animate.webm](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/0584a4d1-268d-4785-b05e-319d54a28de1)
 
-### 3-D Case (2.5x speed)
+### 3-D Case (Threshold = 0.001)
 
-[kmeans3D_animate.webm](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/22394f93-a2f3-499f-a54c-286723dd0a70)
+[kmeans3D_animate.webm](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/a542b606-0844-427e-bfef-243e6f1ceffc)
 
 ## Image Segmentation
 
