@@ -5,15 +5,14 @@
 @description:
     A more function-based implementation of my k-means clustering class.
 """
-from typing import Union, List, Tuple, Callable
+from typing import Union, List, Tuple
 import numpy as np
 from numpy.typing import NDArray
-from kmeans.base_funcs import _assign_clusters, _validate, _new_centroids, dist_funcs, SMALLEST_THRESH
+from kmeans.base_funcs import _assign_clusters, _validate, _new_centroids, SMALLEST_THRESH
 
 
-Clusterable = Union[List[NDArray], Tuple[NDArray], NDArray]
+Clusterable = NDArray
 Clusters = dict[int: Clusterable]
-
 class MaxIterationError(Exception):
     """An exception to be raised when the maximum iteration threshold is exceeded."""
     pass
@@ -25,8 +24,7 @@ def cluster(
         initial_means: Union[List[NDArray], Tuple[NDArray], NDArray] = None,
         ndim: int = None,
         threshold: float = SMALLEST_THRESH, 
-        max_iterations: int = 100,
-        dist_func: Callable = "euclidean"
+        max_iterations: int = 250,
 ) -> tuple[Clusters, NDArray]:
     """Perform k-means clustering
     
@@ -55,12 +53,10 @@ def cluster(
         threshold: How much can a given cluster centroid 
             change between iterations. Default: 4.440892098500626e-15
         max_iterations: The counter timeout 
-            Default: 100
-        dist_func: Distance calculation method
-            Default: 'euclidean'
+            Default: 250
 
     Returns:
-        tuple[Clusterable, NDArray]: clustered data, cluster centroids
+        tuple[NDArray, NDArray]: clustered data, cluster centroids
 
     Raises:
         MaxIterationError: Raise this exception if the clustering doesn't
@@ -74,11 +70,10 @@ def cluster(
         threshold=threshold, 
         max_iterations=max_iterations
     )
-
     clusters, old_centroids = {}, initial_means
 
     for _ in range(max_iterations):
-        clusters = _assign_clusters(data, old_centroids, dist_funcs[dist_func])
+        clusters = _assign_clusters(data, old_centroids)
         centroids = _new_centroids(clusters, ndim)
         changes = np.linalg.norm(centroids - old_centroids, axis=1)  # Distance along each vector
         if any(np.where(changes > threshold, True, False)):

@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 from matplotlib import pyplot as plt
 from matplotlib import colors
 import matplotlib as mpl
-from kmeans.base_funcs import _assign_clusters, _validate, _new_centroids, dist_funcs, SMALLEST_THRESH
+from kmeans.base_funcs import _assign_clusters, _validate, _new_centroids, SMALLEST_THRESH
 
 
 Clusterable = Union[List[NDArray], Tuple[NDArray], NDArray]
@@ -28,7 +28,14 @@ colors: list = [color for color in colors.TABLEAU_COLORS.values()]
 WRAP_FACTOR: int = len(colors)
 SZ = 10
 CENTROID_SZ = 2*SZ
-def _draw(clusters:Clusters, centroids: NDArray, ax_obj: mpl.axes.Axes, ndim: int) -> None:
+def _draw(
+        clusters:Clusters,
+        centroids: NDArray,
+        ax_obj: mpl.axes.Axes,
+        ndim: int,
+        *,
+        legend_loc: str = "best"
+) -> None:
     """Draws the clusters onto the figure
     
     Args:
@@ -36,6 +43,7 @@ def _draw(clusters:Clusters, centroids: NDArray, ax_obj: mpl.axes.Axes, ndim: in
         centroids: The centers of the clusters
         ax_obj: The axes object (from the figure)
         ndim: The number of dimensions
+        legend_loc: Where to place the legend. Defaults to 'best'
 
     Returns:
         None
@@ -51,8 +59,8 @@ def _draw(clusters:Clusters, centroids: NDArray, ax_obj: mpl.axes.Axes, ndim: in
     for key in clusters:
         cluster = clusters[key]
         if ndim == 2:
-            data = [(arr[0], arr[1]) for arr in cluster]
-            x, y = list(zip(*data))
+            x = cluster[:, 0]
+            y = cluster[:, 1]
             cx, cy = centroids[key]
 
             ax_obj.scatter(
@@ -66,8 +74,9 @@ def _draw(clusters:Clusters, centroids: NDArray, ax_obj: mpl.axes.Axes, ndim: in
                 zorder=3,
             ) 
         else:
-            data = [(arr[0], arr[1], arr[2]) for arr in cluster]
-            x, y, z = list(zip(*data))
+            x = cluster[:, 0]
+            y = cluster[:, 1]
+            z = cluster[:, 2]
             cx, cy, cz = centroids[key]
             ax_obj.scatter(
                 x, y, z,
@@ -80,8 +89,8 @@ def _draw(clusters:Clusters, centroids: NDArray, ax_obj: mpl.axes.Axes, ndim: in
                 zorder=5,
             )
     else:
-        ax_obj.legend()
-        plt.pause(0.1) 
+        ax_obj.legend(loc=legend_loc)
+        plt.pause(0.01) 
         plt.show(block=False)
         return
 
@@ -92,7 +101,7 @@ def view_clustering(
         initial_means: Union[List[NDArray], Tuple[NDArray], NDArray] = None,
         ndim: int = None,
         threshold: float = SMALLEST_THRESH,
-        max_iterations: int = 100,
+        max_iterations: int = 250,
         dist_func: Callable = "euclidean"
 ) -> tuple[Clusters, NDArray, mpl.figure.Figure]:
     """Perform and display k-means clustering
@@ -122,9 +131,7 @@ def view_clustering(
         threshold: How much can a given cluster centroid 
             change between iterations. Default: 4.440892098500626e-15
         max_iterations: The counter timeout 
-            Default: 100
-        dist_func: Distance calculation method
-            Default: 'euclidean'
+            Default: 250
 
     Returns:
         tuple[Clusterable, NDArray, mpl.figure.Figure]:
@@ -143,6 +150,11 @@ def view_clustering(
         max_iterations=max_iterations
     )
 
+    if len(data) > 100000:
+        legend_loc = 'upper right'
+    else:
+        legend_loc  = 'best'
+
     clusters, old_centroids = {}, initial_means
     # 2D or 3D plots?
     if ndim==2:
@@ -157,9 +169,9 @@ def view_clustering(
         )
 
     for _ in range(max_iterations):
-        clusters = _assign_clusters(data, old_centroids, dist_funcs[dist_func])
+        clusters = _assign_clusters(data, old_centroids)
         centroids = _new_centroids(clusters, ndim)
-        _draw(clusters, centroids, ax, ndim)
+        _draw(clusters, centroids, ax, ndim, legend_loc=legend_loc)
         changes = np.linalg.norm(centroids - old_centroids, axis=1)  # Distance along each vector
         if any(np.where(changes > threshold, True, False)):
             old_centroids = centroids

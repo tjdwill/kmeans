@@ -5,99 +5,86 @@
 @description:
     Functions that assist with the clustering operation
 """
-from functools import partial
-from typing import Union, List, Tuple, Callable
+from typing import Callable, Union, List, Tuple
 import numpy as np
 from numpy.typing import NDArray
+from time import perf_counter
 
-
-Clusterable = Union[List[NDArray], Tuple[NDArray], NDArray]
+Clusterable = NDArray 
 Clusters = dict[int: Clusterable]
 
 # A la Peter Corke's spatialmath, this sets the smallest value in which an element can change. 
 _eps = np.finfo(np.float64).eps
 SMALLEST_THRESH =  20*_eps
 
-def _eucl_dist(x1: NDArray, x2: NDArray, ndim: int) -> np.float64:
-    """Calculates Euclidian Distance
+
+def time_func(func: Callable):
+    def wrapper(*args, **kwargs):
+        start = perf_counter()
+        out = func(*args, **kwargs)
+        print(f"{func.__name__} Execution Time (s): {perf_counter() - start}")
+        return out
+    return wrapper
+
+
+# TODO: WIP
+#@time_func 
+def _assign_clusters(data: NDArray, centroids: NDArray) -> Clusters:
+    """Assigns each data element to a cluster
     
-    Args:
-        x1: The first data point
-        x2: The second data point
-        ndim: How many dimensions we consider
-    
-    Returns:
-        np.float64: the calculated distance
-    """
-    # Assume data satisfies ndim
-    # Assume flat data.
-    # Assume ndim >= 1
-    vec = x1[:ndim] - x2[:ndim]
-    return np.linalg.norm(vec).astype(np.float64)
-
-
-# TODO: Add more distance functions (efficiency)
-# Function mappings
-dist_funcs = {
-    "euclidean": _eucl_dist,
-}
-
-
-def _assign_cluster(
-        data: NDArray, centroids: NDArray, *,
-        dist_func: Callable, ndim: int, k: int
-) -> int:
-    """Assigns a given data element to a cluster.
-        
     Args:
         data: The data to be labeled.
         centroids: The given information to use as cluster criteria.
-        dist_func: The method of calculating distance.
-        ndim: Data dimensions
-        k: Number of centroids
-    
-    Returns:
-        int: The label index
-    """
-    # Get the smallest distance among the centroids
-    x1s = (data,)*k
-
-    distances = np.array(list(map(dist_func, x1s, centroids, (ndim,)*k)))
-    label: tuple[NDArray] = np.nonzero(
-        np.where(distances == min(distances), True, False)
-    )
-    idx: int = label[0][0]
-    return idx
-
-
-def _assign_clusters(
-        data: Clusterable, centroids: NDArray, dist_func: Callable
-) -> Clusters:
-    """Place each data point into a cluster
-
-    Args:
-        data: The data to be labeled.
-        centroids: The given information to use as cluster criteria.
-        dist_func: The method of calculating distance
 
     Returns:
         dict[int: Clusterable]: the clusters 
-    """
-    k = len(centroids)
-    ndim = centroids[0].shape[0]
-    clusters = {i: [] for i in range(k)}
+    """    
+    k, ndim, *_ = centroids.shape
+    temp_data = data[..., :ndim]
+    vecs = temp_data[:, np.newaxis] - centroids[np.newaxis, ...]
+    norms = np.linalg.norm(vecs, axis=-1)
 
-    partial_assign = partial(_assign_cluster, dist_func=dist_func, k=k, ndim=ndim)
-    labels = map(partial_assign, data, (centroids,)*len(data))
-
-    groupings = zip(labels, data)  # Internal Element Format: (label, data)
-    # Is there a way to extract the groupings all at once?
-    for key, item in groupings:
-        clusters[key].append(item)
+    # Handle the case in which a given data point is equivalently close to multiple centroids.
+    '''
+    Step 1: For each given set of norms, find where the elements are equal to the minimum of that set.
+        Ex. [12, 2, 3, 2] --> [False, True, False, True]
+        eq = np.equal(norms, np.min(norms, axis=1)[:, np.newaxis])
+    Step 2: Find where the elements are True using `np.nonzero`  (call the resulting structure `p`). 
+        This gives the indices of each True value: 
+        `p = np.nonzero(eq)  # (y_indices: NDArray, x_indices: NDArray)`
+    Step 3: For the y_indices (the top level indices), call `np.unique` and return the indices needed to perform the operation. 
+        _, idxs = np.unique(p[0], return_index=True)
+    Step 4: Now, generate the y and x indices needed to construct the array with only one nonzero term in each element:
+        y = p[0][idxs]
+        x = p[1][idxs]
+    Step 5: Create a zero matrix and fill it with ones in the proper place
+        labels = np.zeros(norms.shape)
+        labels[y, x] = 1
+    Step 6: Now, we can find the nonzero elements of this structure and proceed
+        to find the label values for each data element. 
+    '''
+    broadcasted = np.min(norms, axis=1)[:, np.newaxis]
+    nz = np.nonzero(np.equal(norms, broadcasted))
+    _, idxs = np.unique(nz, return_index=True)
+    y = nz[0][idxs]
+    x = nz[1][idxs]
+    labels = np.zeros(norms.shape)
+    labels[y, x] = 1
     
+    # Get the data labels and create the Clusters structure
+    indices = np.nonzero(labels)
+    labels = indices[1].reshape(-1, 1)
+    labeled = np.concatenate((data, labels), axis=-1)
+    labeled = labeled[labeled[:, -1].argsort()]  # https://stackoverflow.com/questions/2828059/sorting-arrays-in-numpy-by-column
+    clusters = {i: None for i in range(k)}
+    for i in range(k):
+        arr = labeled[labeled[:, -1] == i]
+        clusters[i] = arr[:, :-1]
+
     return clusters
 
 
+#@time_func
 def _generate_means(data: Clusterable, k: int, ndim:int) -> NDArray:
     """Randomly selects initial means with uniform distribution
 
@@ -115,9 +102,10 @@ def _generate_means(data: Clusterable, k: int, ndim:int) -> NDArray:
     COUNT_OUT = 1000
     count = 0
 
+
     while count < COUNT_OUT:
         indices = np.random.choice(np.arange(len(data)), size=(k,), replace=False) 
-        means = [data[i, :ndim] for i in indices]
+        means = data[indices, :ndim]
         if len(np.unique(means, axis=0)) == len(means):
             return np.array(means)
         count += 1
@@ -125,6 +113,7 @@ def _generate_means(data: Clusterable, k: int, ndim:int) -> NDArray:
         raise ValueError("Could not find unique set of initial means.\n")
 
 
+#@time_func
 def _new_centroids(clusters: Clusters, ndim: int) -> NDArray:
     """Returns a new set of centroids
     
@@ -135,20 +124,21 @@ def _new_centroids(clusters: Clusters, ndim: int) -> NDArray:
     Returns:
         NDArray: the new centroids
     """
+    # If this becomes a bottleneck, replace the `for` loop with a list comp.
     centroids = []
     for key in clusters:
         cluster = clusters[key]
-        clust_arr = np.array([arr[:ndim] for arr in cluster])
-        avg = clust_arr.sum(0) / clust_arr.shape[0]
+        avg = np.average(cluster[:, :ndim], axis=0)
         centroids.append(avg)
     else:
         return np.array(centroids)
 
 
+#@time_func
 def _validate(
-        data: Clusterable,
+        data: Union[NDArray, List[NDArray], Tuple[NDArray]],
         k: int,*,
-        initial_means: Clusterable = None,
+        initial_means: NDArray = None,
         ndim: int = None,
         threshold: float = 0.5,
         max_iterations: int = 100,
@@ -187,35 +177,35 @@ def _validate(
     if not len(data):
         raise ValueError("No data provided.")
     try:
-        assert all(arr.ndim == 1 for arr in data)
-    except AssertionError:
-        raise ValueError("Each data entry must be a row vector (meaning of shape <1, m>)")
+        new_data = np.array(data)
+    except ValueError:
+        raise ValueError("Input data must be homogeneous. All elements must have the same shape.")
 
     # Check ndim
     if ndim is None:
-        ndim = min(x.shape[0] for x in data)
+        ndim = new_data.shape[0]
     elif not isinstance(ndim, int):
         raise TypeError("Dimension parameter must be an integer.")
     elif ndim < 0:
         raise ValueError("Dimension parameter must be positive.")
-    elif ndim > min(x.shape[0] for x in data):
+    elif ndim > new_data.shape[0]:
         raise ValueError("Dimension value cannot exceed data dimensionality.")
     else:
         pass
 
     # Check initial means
     if initial_means is None:
-        temp_means = _generate_means(data, k=k, ndim=ndim)
+        temp_means = _generate_means(new_data, k=k, ndim=ndim)
     else:
         # Create homogeneous data; Each entry is a row vector.
         temp_means = np.array([arr[:ndim] for arr in initial_means])
-        temp_data = np.array([arr[:ndim] for arr in data])
+        temp_data = new_data[:, :ndim]
         assert temp_means.shape[-1] == temp_data.shape[-1]
         # check if all elements in the means are in the data
         for centroid in temp_means:
             # Test if the centroid is one of the data entries in temp_data.
             try:
-                assert any(np.equal(centroid, temp_data).all(1))
+                assert np.any(np.equal(centroid, temp_data).all(1))
             except AssertionError:
                 raise ValueError(f"Initial means item not among provided data: {centroid}")
         
@@ -230,6 +220,6 @@ def _validate(
             assert len(filtered_initial_means) == k
         except AssertionError:
             raise ValueError("\nNumber of unique mean points must == number of segments.\n")
-    return data, temp_means, ndim
+    return new_data, temp_means, ndim
 
-__all__ = ["_eucl_dist", "_assign_clusters", "_validate", "_new_centroids", "dist_funcs"]
+__all__ = ["_assign_clusters", "_validate", "_new_centroids", "_generate_means"]
