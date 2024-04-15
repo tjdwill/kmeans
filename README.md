@@ -47,17 +47,17 @@ Two options:
 
 k=4
 
-<img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_groups04.jpg" />
+![seg_groups04](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/9b468213-6983-4c66-8f93-de6e58a736a1)
 
 k=10
 
-<img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_groups10.jpg" />
+![seg_groups10](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/91fc5e42-4c2e-49bf-a24f-9926565a1a6c)
 
 ### Random Colors
 
 k=4
 
-<img src="https://github.com/tjdwill/KMeans_Clustering/blob/main/tests/output/seg_rand_groups04.jpg" />
+![seg_rand_groups04_cpy](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/33cee3ba-0a7d-4c12-9f34-7c140376f24b)
 
 ## Developed With
 * Python (3.12.1)
