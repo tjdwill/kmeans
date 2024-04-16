@@ -1,5 +1,4 @@
-# K Means Clustering
-\***Originally written as a class, the implementation has now been refactored to be function-based.**\*
+# K-Means Clustering
 
 
 A repository documenting the implementation of k-Means clustering in Python. Usage examples can be found in the `tests` directory.
@@ -17,6 +16,7 @@ For example, given some data where each element is of form
 ]
 ```
 specifying `ndim=3` will result in only the first three elements of each data point being used for each operation.
+
 This is useful for maintaining data association where it otherwise would be shuffled. An example of this is found in my implementation of image segmentation (`segmentation.py`) in this same project.
 Other examples of use could be for maintaining data association in object detection elements. Given some 
 ```python
@@ -24,26 +24,59 @@ Other examples of use could be for maintaining data association in object detect
 ```
 we may want to cluster the data solely on bounding box information while also maintaining the confidence intervals for each detection for further processing.
 
+---
 
-## k-means Animation
+## How it Works
+
+Specifying the `k` value results in a `dict[int: NDArray]` where each `NDArray` contains the elements within the cluster. The keys of this dict range from `0` to `k-1`, allowing the key to also be used to index the corresponding cluster centroid from the centroid array.
+
+Here is an example of the use of the `cluster` function:
+
+```python
+import numpy as np
+from kmeans import cluster
+
+data = np.random.random((10000, 7))
+
+# Only cluster along first three elements of a given data point.
+# Choose initial_means randomly (default)
+clusters, centroids = cluster(data, k=4, ndim=3, tolerance=0.001)
+
+for key in clusters:
+  cluster = clusters[key]
+  centroid = centroids[key]
+  print(cluster, centroid, sep="\n")
+```
+
+---
+
+## Features
+
+- k-means clustering (no side-effects)
+- k-means clustering w/ animation
+  - (2-D & 3-D)
+- image segmentation via `kmeans.segmentation.segment_img` function
+
+
+### k-means Animation
 
 Using the `view_clustering` function
 
-### 2-D Case (Smallest Threshold Possible)
+#### 2-D Case (Smallest Tolerance Possible)
 
 [kmeans2D_animate.webm](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/0584a4d1-268d-4785-b05e-319d54a28de1)
 
-### 3-D Case (Threshold = 0.001)
+#### 3-D Case (Tolerance = 0.001)
 
 [kmeans3D_animate.webm](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/a542b606-0844-427e-bfef-243e6f1ceffc)
 
-## Image Segmentation
+### Image Segmentation
 
 Perform image segmentation based on color groups specified by the user.
 
 Two options:
 
-### Averaged Colors
+#### Averaged Colors
 
 k=4
 
@@ -53,15 +86,17 @@ k=10
 
 ![seg_groups10](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/91fc5e42-4c2e-49bf-a24f-9926565a1a6c)
 
-### Random Colors
+#### Random Colors
 
 k=4
 
 ![seg_rand_groups04_cpy](https://github.com/tjdwill/KMeans_Clustering/assets/118497355/33cee3ba-0a7d-4c12-9f34-7c140376f24b)
+
+---
 
 ## Developed With
 * Python (3.12.1)
 * Numpy (1.26.2) 
 * Matplotlib (3.8.4)
 
-However, I don't use any features that are specific to Python 3.12.
+However, no features specific to Python 3.12 were used.

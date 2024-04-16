@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling", "numpy", "matplotlib"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kmeans-tjdwill"
+version =  "1.0.0"
+authors = [
+    {name = "Terrance Williams", email = "tjdwill.gh@gmail.com"},
+]
+description = "A function-based implementation of k-means clustering that maintains data association."
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+
+[project.urls]
+Homepage = "https://github.com/tjdwill/KMeans_Clustering"
+Issues = "https://github.com/tjdwill/KMeans_Clustering/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kmeans-tjdwill/kmeans"]
