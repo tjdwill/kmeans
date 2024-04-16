@@ -201,13 +201,14 @@ def _validate(
         temp_data = new_data[:, :ndim]
         assert temp_means.shape[-1] == temp_data.shape[-1]
         # check if all elements in the means are in the data
+        """
         for centroid in temp_means:
             # Test if the centroid is one of the data entries in temp_data.
             try:
                 assert np.any(np.equal(centroid, temp_data).all(1))
             except AssertionError:
                 raise ValueError(f"Initial means item not among provided data: {centroid}")
-        
+        """
         # Check for duplicates
         filtered_initial_means, ndx = np.unique(
             np.copy(temp_means),  # use copy so original array order remains the same.
