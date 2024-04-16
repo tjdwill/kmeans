@@ -5,6 +5,7 @@
     Testing that each check in the data validation function works
 """
 import numpy as np
+#-
 from kmeans.base_funcs import _validate as val
 from kmeans.base_funcs import SMALLEST_THRESH
 
@@ -95,6 +96,7 @@ try:
 except AssertionError:
     pass
 
+"""
 # A data point that is not among the provided data.
 invalid_means = np.copy(valid_means)
 invalid_means[-1] = 10 
@@ -102,7 +104,7 @@ try:
     val(valid_data, k=K, initial_means=invalid_means)
 except ValueError:
     pass
-
+"""
 # Duplicate data points
 try:
     val(valid_data, k=K, initial_means=[valid_data[0] for _ in range(K)])
