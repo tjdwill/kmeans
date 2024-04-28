@@ -1,10 +1,9 @@
-"""
-@author: tjdwill 
-@date: 5 April 2024
-@title: K-means Clustering Animation
-@description:
-    Animating k-means for 2-D and 3-D cases.
-"""
+#=============================================================================
+# @author: tjdwill 
+# @date: 5 April 2024
+# @title: K-means Clustering Animation
+# @description: Animating k-means for 2-D and 3-D cases.
+#=============================================================================
 from typing import Union
 #-
 from matplotlib import pyplot as plt
@@ -13,13 +12,11 @@ import matplotlib as mpl
 import numpy as np
 #-
 from kmeans.base_funcs import _assign_clusters, _validate, _new_centroids, SMALLEST_THRESH
+from kmeans.clustering import MaxIterationError
 
 
 Clusterable = np.ndarray
 Clusters = dict[int, Clusterable]
-class MaxIterationError(Exception):
-    """An exception to be raised when the maximum iteration tolerance is exceeded."""
-    pass
 
 
 colors: list = [color for color in colors.TABLEAU_COLORS.values()]
@@ -103,38 +100,31 @@ def view_clustering(
 ) -> tuple[Clusters, np.ndarray, mpl.figure.Figure]:
     """Perform and display k-means clustering
     
+    This is the same as :func:`kmeans.cluster`, just with plotting side-effects.
+
     Args:
-        data: The input data
-            This data should be formatted in terms of row vectors.
-            Given a flat numpy array
-            data=np.array([0, 1, 2, 3, 4]), do the following:
-                `data = data.reshape(data.shape[-1], -1)`
-            or  `data = data[..., np.newaxis]`
-            It should make each point a row entry:
-                [[0], [1], [2], [3], [4]]
-            Data of higher dimensions (ex. a multi-channeled image)
-            should be flattened using the number of indices
-            for the deepest dimension. So, for an image with shape
-            (480, 640, 3), run
-                `data = data.reshape(-1, data.shape[-1])`
-        k: Amount of clusters
-        initial_means: The initial cluster centroids
-            Default: None -> Means are randomly selected from data 
-            with uniform probability
-        ndim: Dimension limit for clustering; 
-            Default: None -> selects the ndim based on data length
-        tolerance: Controls the completion criteria. Lower -> more iterations.
-            Default: 20*eps for np.float64
-        max_iterations: The counter timeout. Function raises exception if exceeded.
-            Default: 250
+        data: The input data. Expects data homogeneity (all elements are the
+            same dimension)
+        k: Amount of clusters desired.
+        initial_means: The initial cluster centroids. Means are randomly
+            selected from data with uniform probability by default.
+        ndim: Dimension limit for clustering. If default, the length of a given
+            data element is used (all data dimensions clustered).
+        tolerance: Controls the completion criteria. Lower values -> more
+            iterations. Defaults to 20*eps for np.float64.
+        max_iterations: Max number of iterations before terminating function execution.
 
     Returns:
-        ({int: np.np.ndarray}, np.np.ndarray, matplotlib.figure.Figure): 
-            clustered data, cluster centroids, Matplotlib Figure
+        dict[int, np.ndarray], np.ndarray, matplotlib.figure.Figure: 
+            Clustered Data, Cluster Centroids, Matplotlib Figure
 
     Raises:
-        MaxIterationError: Raise this exception if the clustering doesn't
-            converge before reaching the `max_iterations` count.
+        `ValueError`: if calculated ``ndim`` or provided ``ndim`` is neither 2
+            nor 3.
+        kmeans.MaxIterationError: Raise this exception if the clustering doesn't
+            converge before reaching the ``max_iterations`` count.
+        
+
     """
     data, initial_means, ndim = _validate(
         data,

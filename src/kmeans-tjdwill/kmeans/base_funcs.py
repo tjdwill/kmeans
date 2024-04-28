@@ -1,10 +1,10 @@
-"""
-@author: tjdwill 
-@date: 6 April 2024
-@title: k-means base functions
-@description:
-    Functions that assist with the clustering operation
-"""
+#==============================================================================
+# @author: tjdwill 
+# @date: 6 April 2024
+# @title: k-means base functions
+# @description:
+#     Functions that assist with the clustering operation
+#==============================================================================
 from time import perf_counter
 from typing import Callable, Union
 #-
@@ -18,7 +18,16 @@ _eps = np.finfo(np.float64).eps
 SMALLEST_THRESH =  20*_eps
 
 
-def time_func(func: Callable):
+def time_func(func: Callable) -> Callable:
+    """A decorator to time function execution.
+    
+    Args:
+        func: the function to time.
+
+    Returns: 
+        Callable: The wrapped function
+
+    """
     def wrapper(*args, **kwargs):
         start = perf_counter()
         out = func(*args, **kwargs)
@@ -36,7 +45,8 @@ def _assign_clusters(data: Clusterable, centroids: np.ndarray) -> Clusters:
         centroids: The given information to use as cluster criteria.
 
     Returns:
-        dict[int: Clusterable]: the clusters 
+        dict[int, np.ndarray]: The Clusters 
+    
     """    
     k, ndim, *_ = centroids.shape
     temp_data = data[..., :ndim]
@@ -93,10 +103,11 @@ def _generate_means(data: Clusterable, k: int, ndim:int) -> np.ndarray:
         ndim: Dimensionality of means
 
     Returns:
-        np.ndarray: the initial means    
+        np.ndarray: Initial Cluster Centroids
 
     Raises:
-        ValueError: If can't find unique set of means within the COUNT_OUT
+        ValueError: If can't find unique set of means.
+    
     """
     COUNT_OUT = 1000
     count = 0
@@ -121,7 +132,8 @@ def _new_centroids(clusters: Clusters, ndim: int) -> np.ndarray:
         ndim: Dimension of data we are clustering
 
     Returns:
-        np.ndarray: the new centroids
+        np.ndarray: New Centroids
+    
     """
     # If this becomes a bottleneck, replace the `for` loop with a list comp.
     centroids = []
@@ -146,15 +158,22 @@ def _validate(
     
     Args:
         data: The input data
-        k: Amount of clusters
+        k: Amount of clusters desired
         initial_means: The initial cluster centroids
-        ndim: Dimension limit for clustering
-        tolerance: How much can a given cluster centroid 
-            move between iterations
-        max_iterations: The counter timeout
+        ndim: Dimension limit for clustering. If default, the length of a given
+            data element is used (all data dimensions clustered).
+        tolerance: Max tolerable distance a centroid can move before requiring
+            another round of clustering
+        max_iterations: Max number of iterations before terminating function
+            execution.
 
     Returns:
-        tuple[np.ndarray, np.ndarray, int]: the validated data, initial means, and ndim
+        np.ndarray, np.ndarray, int: Validated Data, Initial Centroids, ndim
+        
+    Raises:
+        ValueError: if an input argument is incorrect in value
+        TypeError: if an input argument is of the wrong type.
+
     """
     # Check k
     if not isinstance(k, int): 
@@ -222,4 +241,5 @@ def _validate(
             raise ValueError("\nNumber of unique mean points must == number of segments.\n")
     return new_data, temp_means, ndim
 
+validate = _validate
 __all__ = ["_assign_clusters", "_validate", "_new_centroids", "_generate_means"]

@@ -1,10 +1,10 @@
-"""
-@author: tjdwill
-@date: 12 April 2024
-@title: Image segmentation
-@description:
-    Perform semantic segmentation on the provided image.
-"""
+#=============================================================================
+#@author: tjdwill
+#@date: 12 April 2024
+#@title: Image segmentation
+#@description:
+#    Perform semantic segmentation on the provided image.
+#=============================================================================
 import itertools
 #-
 import numpy as np
@@ -12,14 +12,15 @@ import numpy as np
 from kmeans import cluster
 
 
-def append_coords(img: np.ndarray) -> np.ndarray:
+def _append_coords(img: np.ndarray) -> np.ndarray:
     """Append each pixel's coordinate to itself.
     
     Args:
         img: The image.
     
     Returns:
-        np.ndarray: The new array with appended indices.
+        np.ndarray: Array with appended indices.
+
     """
     height, width, *rest = img.shape
     indices = list(itertools.product(range(height), range(width)))
@@ -28,18 +29,18 @@ def append_coords(img: np.ndarray) -> np.ndarray:
 
 
 def segment_img(img: np.ndarray, groups: int, random_colors: bool = False) -> np.ndarray:
-    """Segment the image based on RGB color.
+    """Segment the input RGB image by color groups.
     
     Args:
         img: The image to be segmented. Assumes RGB
         groups: How many groups the image is segmented into. Higher numbers -> more detail
         random_colors: Provide each group with a randomized RGB color instead of the average color.
-            Defaults to False
 
     Returns:
-        np.ndarray: The segmented image
+        np.ndarray: Segmented Image
+ 
     """
-    img_w_idxs = append_coords(img)
+    img_w_idxs = _append_coords(img)
     elem_dim = img_w_idxs.shape[-1]
     assert elem_dim == 5  #(R, G, B, y, x)
     color_groups, group_colors, *extra = cluster(img_w_idxs.reshape(-1, elem_dim), k=groups, ndim=3, tolerance=0.01)
