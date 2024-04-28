@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kmeans-tjdwill"
-version =  "1.0.2"
+dynamic = ["version"]
 authors = [
     {name = "Terrance Williams", email = "tjdwill.gh@gmail.com"},
 ]
@@ -32,3 +32,6 @@ Issues = "https://github.com/tjdwill/kmeans/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kmeans-tjdwill/kmeans"]
+
+[tool.hatch.version]
+path = "src/kmeans-tjdwill/kmeans/__init__.py"

@@ -4,7 +4,13 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information\
+
+# Add package to path
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path("../src/kmeans-tjdwill").resolve()))
 import kmeans
 
 project = 'K-Means Clustering'

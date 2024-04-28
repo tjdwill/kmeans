@@ -1,6 +1,5 @@
 # Set version num
-import importlib.metadata
-__version__ = importlib.metadata.version("kmeans-tjdwill")
+__version__ = "1.0.2"
 
 # Set user API
 from kmeans.clustering import cluster, MaxIterationError
