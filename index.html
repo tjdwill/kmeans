@@ -221,25 +221,25 @@ which the data is clustered. For example:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Cluster using only first two dimensions</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">clusters</span><span class="p">,</span> <span class="n">centroids</span> <span class="o">=</span> <span class="n">cluster</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ndim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">centroids</span>
-<span class="go">array([[0.9004, 0.79  ],</span>
-<span class="go">    [0.5795, 0.3995],</span>
-<span class="go">    [0.254 , 0.6325]])</span>
+<span class="go">array([[0.9004  , 0.79    ],</span>
+<span class="go">       [0.361375, 0.580125],</span>
+<span class="go">       [0.801   , 0.143   ]])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">clusters</span>  <span class="c1"># visually compare centroids with first two elements of each data entry.</span>
 <span class="go">{0: array([[0.979, 0.893, 0.21 , 0.742, 0.663],</span>
-<span class="go">     [0.887, 0.858, 0.749, 0.87 , 0.187],</span>
-<span class="go">     [0.966, 0.583, 0.092, 0.014, 0.837],</span>
-<span class="go">     [0.915, 0.705, 0.387, 0.706, 0.923],</span>
-<span class="go">     [0.755, 0.911, 0.242, 0.976, 0.304]]),</span>
-<span class="go"> 1: array([[0.326, 0.373, 0.794, 0.151, 0.17 ],</span>
-<span class="go">     [0.701, 0.181, 0.599, 0.415, 0.514],</span>
-<span class="go">     [0.477, 0.493, 0.595, 0.076, 0.117],</span>
-<span class="go">     [0.489, 0.596, 0.264, 0.992, 0.21 ],</span>
-<span class="go">     [0.583, 0.649, 0.911, 0.122, 0.676],</span>
-<span class="go">     [0.901, 0.105, 0.673, 0.87 , 0.561]]),</span>
-<span class="go"> 2: array([[0.426, 0.815, 0.735, 0.868, 0.383],</span>
-<span class="go">     [0.081, 0.305, 0.783, 0.163, 0.071],</span>
-<span class="go">     [0.221, 0.726, 0.849, 0.929, 0.736],</span>
-<span class="go">     [0.288, 0.684, 0.52 , 0.877, 0.924]])}</span>
+<span class="go">      [0.887, 0.858, 0.749, 0.87 , 0.187],</span>
+<span class="go">      [0.966, 0.583, 0.092, 0.014, 0.837],</span>
+<span class="go">      [0.915, 0.705, 0.387, 0.706, 0.923],</span>
+<span class="go">      [0.755, 0.911, 0.242, 0.976, 0.304]]),</span>
+<span class="go">1: array([[0.426, 0.815, 0.735, 0.868, 0.383],</span>
+<span class="go">      [0.326, 0.373, 0.794, 0.151, 0.17 ],</span>
+<span class="go">      [0.081, 0.305, 0.783, 0.163, 0.071],</span>
+<span class="go">      [0.221, 0.726, 0.849, 0.929, 0.736],</span>
+<span class="go">      [0.477, 0.493, 0.595, 0.076, 0.117],</span>
+<span class="go">      [0.288, 0.684, 0.52 , 0.877, 0.924],</span>
+<span class="go">      [0.489, 0.596, 0.264, 0.992, 0.21 ],</span>
+<span class="go">      [0.583, 0.649, 0.911, 0.122, 0.676]]),</span>
+<span class="go">2: array([[0.701, 0.181, 0.599, 0.415, 0.514],</span>
+<span class="go">      [0.901, 0.105, 0.673, 0.87 , 0.561]])}</span>
 </pre></div>
 </div>
 </section>
