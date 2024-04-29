@@ -5,8 +5,8 @@ on:
     branch: # Only rebuild site if main branch changes
       - main
     paths:  # Only rebuild site if relevant components change.
-      - **.rst
-      - **.py
+      - '**.rst'
+      - '**.py'
 
 jobs:
   build:
