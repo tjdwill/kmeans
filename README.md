@@ -29,6 +29,12 @@ we may want to cluster the data solely on bounding box information while also ma
 
 ---
 
+## Installation
+
+```bash
+$ python -m pip install kmeans-tjdwill
+```
+
 ## How it Works
 
 Specifying the `k` value results in a `dict[int: NDArray]` where each `NDArray` contains the elements within the cluster. The keys of this dict range from `0` to `k-1`, allowing the key to also be used to index the corresponding cluster centroid from the centroid array.
