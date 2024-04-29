@@ -1,5 +1,7 @@
 # K-Means Clustering
 
+![Docs](https://github.com/tjdwill/kmeans/blob/main/.github/workflows/sitebuild.yml/badge.svg)
+![PyPI](https://github.com/tjdwill/kmeans/blob/main/.github/workflows/python-publish.yml/badge.svg)
 
 A repository documenting the implementation of k-Means clustering in Python. Usage examples can be found in the `tests` directory.
 
