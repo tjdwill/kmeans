@@ -52,7 +52,7 @@ The package can be installed via `PyPI <https://pypi.org/project/kmeans-tjdwill/
 
 .. code-block:: console
 
-   $ pip install kmeans-tjdwill
+   $ python -m pip install kmeans-tjdwill
 
 Issues
 ======
