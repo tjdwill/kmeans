@@ -31,7 +31,7 @@ Homepage = "https://github.com/tjdwill/kmeans"
 Issues = "https://github.com/tjdwill/kmeans/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/kmeans-tjdwill/kmeans"]
+packages = ["src/kmeans"]
 
 [tool.hatch.version]
-path = "src/kmeans-tjdwill/kmeans/__init__.py"
+path = "src/kmeans/__init__.py"
