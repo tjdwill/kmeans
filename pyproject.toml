@@ -28,6 +28,7 @@ keywords = ["k-means", "clustering", "data analysis", "data processing", "linear
 
 [project.urls]
 Homepage = "https://github.com/tjdwill/kmeans"
+Docs = "https://tjdwill.github.io/kmeans"
 Issues = "https://github.com/tjdwill/kmeans/issues"
 
 [tool.hatch.build.targets.wheel]
