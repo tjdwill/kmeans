@@ -10,7 +10,9 @@
 from pathlib import Path
 import sys
 
-sys.path.insert(0, str(Path("../src/kmeans-tjdwill").resolve()))
+this_file = Path(__file__)
+pkg_path = this_file.parents[1] / "src"
+sys.path.insert(0, str(pkg_path.resolve()))
 import kmeans
 
 project = 'K-Means Clustering'
