@@ -10,6 +10,7 @@
 from pathlib import Path
 import sys
 
+#docs build test
 this_file = Path(__file__)
 pkg_path = this_file.parents[1] / "src"
 sys.path.insert(0, str(pkg_path.resolve()))
