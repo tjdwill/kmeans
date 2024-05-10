@@ -42,19 +42,34 @@ Specifying the `k` value results in a `dict[int: NDArray]` where each `NDArray` 
 Here is an example of the use of the `cluster` function:
 
 ```python
-import numpy as np
-from kmeans import cluster
-
-data = np.random.random((10000, 7))
-
-# Only cluster along first three elements of a given data point.
-# Choose initial_means randomly (default)
-clusters, centroids = cluster(data, k=4, ndim=3, tolerance=0.001)
-
-for key in clusters:
-  cluster = clusters[key]
-  centroid = centroids[key]
-  print(cluster, centroid, sep="\n")
+>>> from kmeans import cluster
+>>> import numpy as np
+>>> np.random.seed(27)   # For reproducible results
+>>> data = np.random.random((15, 5)).round(3)
+>>> data[0]
+array([0.426, 0.815, 0.735, 0.868, 0.383])
+>>> # Cluster using only first two dimensions
+>>> clusters, centroids = cluster(data, k=3, ndim=2, tolerance=0.001)
+>>> centroids
+array([[0.9004  , 0.79    ],
+      [0.361375, 0.580125],
+      [0.801   , 0.143   ]])
+>>> clusters  # visually compare centroids with first two elements of each data entry.
+{0: array([[0.979, 0.893, 0.21 , 0.742, 0.663],
+     [0.887, 0.858, 0.749, 0.87 , 0.187],
+     [0.966, 0.583, 0.092, 0.014, 0.837],
+     [0.915, 0.705, 0.387, 0.706, 0.923],
+     [0.755, 0.911, 0.242, 0.976, 0.304]]),
+1: array([[0.426, 0.815, 0.735, 0.868, 0.383],
+     [0.326, 0.373, 0.794, 0.151, 0.17 ],
+     [0.081, 0.305, 0.783, 0.163, 0.071],
+     [0.221, 0.726, 0.849, 0.929, 0.736],
+     [0.477, 0.493, 0.595, 0.076, 0.117],
+     [0.288, 0.684, 0.52 , 0.877, 0.924],
+     [0.489, 0.596, 0.264, 0.992, 0.21 ],
+     [0.583, 0.649, 0.911, 0.122, 0.676]]),
+2: array([[0.701, 0.181, 0.599, 0.415, 0.514],
+     [0.901, 0.105, 0.673, 0.87 , 0.561]])}
 ```
 
 ---
