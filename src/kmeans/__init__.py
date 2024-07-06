@@ -1,5 +1,5 @@
 # Set version num
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 
 # Set user API
 from kmeans.clustering import cluster, MaxIterationError
