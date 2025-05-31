@@ -16,7 +16,7 @@ editables==0.5
 filelock==3.13.4
 fonttools==4.51.0
 furo==2024.4.27
-h11==0.14.0
+h11==0.16.0
 hatch==1.9.7
 hatchling==1.21.1
 httpcore==1.0.5
